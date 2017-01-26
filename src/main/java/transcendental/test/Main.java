@@ -1,0 +1,94 @@
+package transcendental.test;
+
+import java.awt.*;
+import java.awt.datatransfer.*;
+import java.io.IOException;
+import java.net.Socket;
+
+import org.apache.commons.codec.binary.Base64;
+
+/**
+ * Created by markus on 26.01.17.
+ */
+public class Main {
+	public static void main(String[] args) throws ClassNotFoundException {
+		Clipboard x = Toolkit.getDefaultToolkit().getSystemClipboard();
+		//System.out.println(Arrays.deepToString(x.getAvailableDataFlavors()));
+		System.out.println(x.getName());
+		System.out.println(System.getProperty("awt.toolkit"));
+		aToString(x.getAvailableDataFlavors());
+		System.out.println("--");
+		System.out.println(DataFlavor.imageFlavor.toString());
+		System.out.println(new DataFlavor("text/html"));
+
+		Socket clientSocket;
+		try {
+			clientSocket = new Socket("localhost", 19192);
+			byte[] data;
+			String a="{\"Type\":\"Hello\",\"Content\":\"";
+			String b= "";data="Raum1".getBytes();
+			clientSocket.getInputStream().read(data);
+		} catch (IOException e) {
+			e.printStackTrace();
+
+		}
+
+	}
+
+	private static void aToString(Object[] args){
+		for (Object arg : args) {
+			System.out.println(arg.toString());
+		}
+	}
+}
+
+class Dings implements ClipboardOwner,Transferable{
+	/**
+	 * Notifies this object that it is no longer the clipboard owner.
+	 * This method will be called when another application or another
+	 * object within this application asserts ownership of the clipboard.
+	 *
+	 * @param clipboard the clipboard that is no longer owned
+	 * @param contents  the contents which this owner had placed on the clipboard
+	 */
+	public void lostOwnership(Clipboard clipboard, Transferable contents) {
+
+	}
+
+	/**
+	 * Returns an array of DataFlavor objects indicating the flavors the data
+	 * can be provided in.  The array should be ordered according to preference
+	 * for providing the data (from most richly descriptive to least descriptive).
+	 *
+	 * @return an array of data flavors in which this data can be transferred
+	 */
+	public DataFlavor[] getTransferDataFlavors() {
+		return new DataFlavor[0];
+	}
+
+	/**
+	 * Returns whether or not the specified data flavor is supported for
+	 * this object.
+	 *
+	 * @param flavor the requested flavor for the data
+	 * @return boolean indicating whether or not the data flavor is supported
+	 */
+	public boolean isDataFlavorSupported(DataFlavor flavor) {
+		return false;
+	}
+
+	/**
+	 * Returns an object which represents the data to be transferred.  The class
+	 * of the object returned is defined by the representation class of the flavor.
+	 *
+	 * @param flavor the requested flavor for the data
+	 * @throws IOException                if the data is no longer available
+	 *                                    in the requested flavor.
+	 * @throws UnsupportedFlavorException if the requested data flavor is
+	 *                                    not supported.
+	 * @see DataFlavor#getRepresentationClass
+	 */
+	public Object getTransferData(DataFlavor flavor) throws UnsupportedFlavorException, IOException {
+		return null;
+	}
+}

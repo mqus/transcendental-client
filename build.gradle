@@ -1,0 +1,15 @@
+group 'transcendental'
+version '1.0-SNAPSHOT'
+
+apply plugin: 'java'
+
+sourceCompatibility = 1.7
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    testCompile group: 'junit', name: 'junit', version: '4.11'
+    compile group: 'org.apache.directory.studio', name: 'org.apache.commons.codec', version:'1.8'
+}
