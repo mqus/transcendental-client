@@ -3,7 +3,13 @@ package transcendental.test;
 import java.awt.*;
 import java.awt.datatransfer.*;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.net.Socket;
+
+import com.google.gson.GsonBuilder;
+import transcendental.client.lib.Package;
+
+import com.google.gson.Gson;
 
 import org.apache.commons.codec.binary.Base64;
 
@@ -11,23 +17,36 @@ import org.apache.commons.codec.binary.Base64;
  * Created by markus on 26.01.17.
  */
 public class Main {
+
+
+	public static void main1(String[] args) throws UnsupportedEncodingException {
+		byte[] p = Package.createHelloPackage("Raum1".getBytes());
+		System.out.println(p);
+		System.out.println(new String(p,"UTF-8"));
+		System.out.println(new String("Raum1".getBytes(), "UTF-8"));
+
+	}
+
+
+
 	public static void main(String[] args) throws ClassNotFoundException {
-		Clipboard x = Toolkit.getDefaultToolkit().getSystemClipboard();
-		//System.out.println(Arrays.deepToString(x.getAvailableDataFlavors()));
-		System.out.println(x.getName());
-		System.out.println(System.getProperty("awt.toolkit"));
-		aToString(x.getAvailableDataFlavors());
-		System.out.println("--");
-		System.out.println(DataFlavor.imageFlavor.toString());
-		System.out.println(new DataFlavor("text/html"));
+//		Clipboard x = Toolkit.getDefaultToolkit().getSystemClipboard();
+//		//System.out.println(Arrays.deepToString(x.getAvailableDataFlavors()));
+//		System.out.println(x.getName());
+//		System.out.println(System.getProperty("awt.toolkit"));
+//		aToString(x.getAvailableDataFlavors());
+//		System.out.println("--");
+//		System.out.println(DataFlavor.imageFlavor.toString());
+//		System.out.println(new DataFlavor("text/html"));
 
 		Socket clientSocket;
 		try {
 			clientSocket = new Socket("localhost", 19192);
-			byte[] data;
-			String a="{\"Type\":\"Hello\",\"Content\":\"";
-			String b= "";data="Raum1".getBytes();
-			clientSocket.getInputStream().read(data);
+			byte[] p = Package.createHelloPackage("Raum1".getBytes());
+			clientSocket.setTcpNoDelay(true);
+			clientSocket.getOutputStream().write(p);
+			int n=clientSocket.getInputStream().read(p);
+			System.out.println("read:"+n);
 		} catch (IOException e) {
 			e.printStackTrace();
 
