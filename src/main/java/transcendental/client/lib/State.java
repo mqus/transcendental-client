@@ -19,8 +19,12 @@ public enum State {
 	//The Connection was lost.
 	CONNECTION_LOST,
 
+	//An Exception was thrown
+	EXCEPTION,
+
+
 	//The client requested for clipboard data but has no answer yet
-	REQUEST_PENDING,
+	//REQUEST_PENDING,
 
 
 }

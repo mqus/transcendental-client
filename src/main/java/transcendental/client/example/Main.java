@@ -1,5 +1,6 @@
 package transcendental.client.example;
 
+import transcendental.client.lib.Connection;
 import transcendental.client.lib.State;
 import transcendental.client.lib.StateChangeListener;
 
@@ -8,6 +9,7 @@ import transcendental.client.lib.StateChangeListener;
  */
 public class Main implements StateChangeListener {
 	public static void main(String[] args) {
+		Connection conn = new Connection("localhost",19192);
 
 	}
 

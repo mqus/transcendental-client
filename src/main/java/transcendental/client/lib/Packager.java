@@ -1,37 +1,52 @@
 package transcendental.client.lib;
 
 import com.google.gson.Gson;
+import com.google.gson.JsonIOException;
+import com.google.gson.JsonParseException;
+import com.google.gson.JsonSyntaxException;
 import com.google.gson.annotations.SerializedName;
 import org.apache.commons.codec.binary.Base64;
 
 import java.io.Reader;
 import java.io.UnsupportedEncodingException;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
+import javax.crypto.*;
+import javax.crypto.spec.SecretKeySpec;
 
 /**
  * Created by markus on 29.01.17.
  */
 public class Packager {
-	private byte[] pass;
-	private static Gson g = new Gson();
 
-	public Packager(String pass) {
-		try {
-			this.pass = pass.getBytes("UTF-8");
-		} catch (UnsupportedEncodingException e) {
-			Util.ohMyGodUtf8IsNotSupportedWhatShouldIDo(e);
-		}
+	private static Gson g = new Gson();
+	private Cipher encryptor,decryptor;
+
+	public Packager(String pass) throws InvalidKeyException {
+		setPass(pass);
 	}
 
-	public void setPass(String pass) {
+	public void setPass(String pass) throws InvalidKeyException{
 		try {
-			this.pass = pass.getBytes("UTF-8");
+			//MAYBE: change to CBC
+			byte[] key = pass.getBytes("UTF-8");
+			encryptor = Cipher.getInstance("AES/ECB/PKCS7Padding");
+			decryptor = Cipher.getInstance("AES/ECB/PKCS7Padding");
+			SecretKeySpec sks= new SecretKeySpec(key, "AES");
+			encryptor.init(Cipher.ENCRYPT_MODE,sks);
+			decryptor.init(Cipher.DECRYPT_MODE,sks);
 		} catch (UnsupportedEncodingException e) {
 			Util.ohMyGodUtf8IsNotSupportedWhatShouldIDo(e);
+		} catch (NoSuchAlgorithmException | NoSuchPaddingException e) {
+			e.printStackTrace();
+			throw new Error(e);
 		}
+
+
 	}
 
 	public byte[] packHello() {
-		return pack(Package.Type.HELLO, pass);
+		return pack(Package.Type.HELLO, "ROOM".getBytes());
 	}
 
 	public byte[] packCopy(byte[] flavors) {
@@ -93,7 +108,7 @@ public class Packager {
 			return clientID;
 		}
 
-		public byte[] getContent() {
+		public byte[] getContent() throws BadPaddingException {
 			return decrypt(decodeBytes(content));
 		}
 
@@ -101,13 +116,20 @@ public class Packager {
 
 	// converting methods
 	private byte[] encrypt(byte[] cleartext) {
-		//TODO
-		return cleartext;
+		try {
+			return encryptor.doFinal(cleartext);
+		} catch (IllegalBlockSizeException | BadPaddingException e) {
+			e.printStackTrace();
+			throw new Error(e);
+		}
 	}
 
-	private byte[] decrypt(byte[] cryptotext) {
-		//TODO
-		return cryptotext;
+	private byte[] decrypt(byte[] cryptotext) throws BadPaddingException{
+		try {
+			return decryptor.doFinal(cryptotext);
+		} catch (IllegalBlockSizeException e) {
+			throw new Error(e);
+		}
 	}
 
 	private static String encodeBytes(byte[] bytes) {
@@ -129,11 +151,14 @@ public class Packager {
 		}
 	}
 
-	public Package deserialize(Reader input) {
-
+	public Package deserialize(Reader input) throws JsonIOException, JsonSyntaxException{
 		SerializablePackage pkg = g.fromJson(input, SerializablePackage.class);
-
-		return new Package(pkg.getType(), pkg.getClientID(), pkg.getContent());
+		try {
+			return new Package(pkg.getType(), pkg.getClientID(), pkg.getContent());
+		} catch (BadPaddingException e) {
+			e.printStackTrace();
+			return Package.BAD_PACKAGE;
+		}
 	}
 
 }

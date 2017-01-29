@@ -5,6 +5,7 @@ import java.awt.datatransfer.*;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.Socket;
+import java.security.InvalidKeyException;
 
 import com.google.gson.GsonBuilder;
 import transcendental.client.lib.Package;
@@ -12,6 +13,7 @@ import transcendental.client.lib.Package;
 import com.google.gson.Gson;
 
 import org.apache.commons.codec.binary.Base64;
+import transcendental.client.lib.Packager;
 
 /**
  * Created by markus on 26.01.17.
@@ -29,7 +31,7 @@ public class Main {
 
 
 
-	public static void main(String[] args) throws ClassNotFoundException {
+	public static void main(String[] args) throws ClassNotFoundException, InvalidKeyException {
 //		Clipboard x = Toolkit.getDefaultToolkit().getSystemClipboard();
 //		//System.out.println(Arrays.deepToString(x.getAvailableDataFlavors()));
 //		System.out.println(x.getName());
@@ -41,8 +43,9 @@ public class Main {
 
 		Socket clientSocket;
 		try {
+			Packager pr=new Packager("Raum1");
 			clientSocket = new Socket("localhost", 19192);
-			byte[] p = Package.createHelloPackage("Raum1".getBytes());
+			byte[] p = pr.packHello();
 			clientSocket.setTcpNoDelay(true);
 			clientSocket.getOutputStream().write(p);
 			int n=clientSocket.getInputStream().read(p);

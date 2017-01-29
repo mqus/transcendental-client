@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.net.Socket;
+import java.security.InvalidKeyException;
 
 /**
  * Created by markus on 26.01.17.
@@ -23,163 +24,84 @@ public class Client implements FlavorListener, Transferable, ClipboardOwner {
 
 	//runtimeVars
 	private Packager packager;
-	private Socket conn;
 	private Clipboard clipboard;
-	private State s;
 	private int lastClipboardHolder=0;
 	private boolean isClipboardContentFromMe=false;
 	private DataFlavor[] lastflavors=new DataFlavor[0];
+	private Connection conn;
 
-	public Client(String room) {
+	public Client(String room,Connection conn) throws InvalidKeyException {
+		this.conn=conn;
+		conn.bind(this);
 		this.packager=new Packager(room);
 		this.clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
-		this.clipboard.addFlavorListener(this);
 	}
 
-	public Client setPort(int port) throws IllegalArgumentException{
-		if(port>= (1<<16) || port<=0)
-			throw new IllegalArgumentException("" + port + " is not a valid port number!");
-		this.port = port;
-		return this;
+	Packager getPackager() {
+		return packager;
 	}
 
-	public Client setServer(String server) {
-		this.server = server;
-		return this;
-	}
-
-	public Client setRoom(String room) {
-		//TODO
-		//disconnect if neccessary
-		this.packager=new Packager(room);
-		//reconnect if neccessary
-		return this;
-	}
-
-	public Client setStateChangeListener(StateChangeListener listener){
-		if(listener==null)
-			listener=StateChangeListener.SILENT;
-		else
-			listener=listener;
-		return this;
-	}
-
-	public Exception getLastException(){
-		return this.lastException;
-	}
 
 
 	/**
 	 * starts the (inifinite) Client Loop, which occasionally calls StateChangedListener to notify the Program running the client.
 	 */
 	public void connectAndRun(){
-		boolean successfull=connectOnce();
+		boolean ok = conn.open();
+		if(!ok) return;
+			//MAYBE ok this way
+		this.clipboard.addFlavorListener(this);
+		recvLoop();
+
+	}
+
+
+	public void disconnect(){
 		//TODO
-
+		this.clipboard.removeFlavorListener(this);
+		this.conn.disconnect();
 	}
 
-
-	private boolean connectOnce(){
-		changeState(State.CONNECTING);
-
-		try {
-			conn = new Socket(server, port);
-			conn.getOutputStream().write(packager.packHello());
-		} catch (IOException e) {
-			lastException=e;
-			changeState(State.FAILED);
-			//TODO:what to do if FAILED?
-			return false;
-		}
-		changeState(State.CONNECTED);
-		return true;
-	}
-
-	public void disconnect(){this.disconnect(false);}
-
-	public void disconnect(boolean silent){
-		try {
-			conn.close();
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-		changeState(State.NO_CONNECTION, silent);
-	}
-
-	public void sendPkg(byte[] pkg){
-		//send pkg.
-		//when an error occurs,
-		//TODO
-
-		try {
-			conn.getOutputStream().write(pkg);
-		} catch (IOException e) {
-			lastException=e;
-			try {
-				conn.close();
-			} catch (IOException e1) {
-				e1.printStackTrace();
-			}
-			changeState(State.CONNECTION_LOST);
-		}
-	}
 
 	public void recvLoop(){
 		while(true){
-			Reader r = null;
-			try {
-				r = new InputStreamReader(conn.getInputStream(), "UTF-8");
-				while(true){
-					Package pkg = packager.deserialize(r);
-					switch(pkg.getType()){
-						case COPY:
-							//TODO Received Copy
-							// deserialize Flavors
-							// write to lastFlavors
-							//save ClientID
-							// clipoard.setContent(this,this)
+			Package pkg = conn.recv();
+			if(pkg == null){
+				//TODO
+			}else{
+				//TODO
+			}
+			switch(pkg.getType()){
+				case COPY:
+					//TODO Received Copy
+					// deserialize Flavors
+					// write to lastFlavors
+					//save ClientID
+					// clipoard.setContent(this,this)
 
-							break;
-						case DATA:
-							//TODO Release Semaphore
-							// if state is ok
-							// set state+data+currentLocalFlavor
-							break;
-						case REQUEST:
-							//TODO reply with DATA/REJECT
-							//check if flavor is ok (with clipboard)
-							//get Data/Flavors per clipboard
-							//Serialize DATA/Flavors
-							//send Data/Reject
-							break;
-						case REJECT:
-							//TODO Release Semaphore
-							// if state is ok
-							// set state + flavors
-							break;
-						case TEXT:
-							//TODO
-						//case TEXT:
-					}
-				}
-			} catch (IOException e) {
-				e.printStackTrace();
+					break;
+				case DATA:
+					//TODO Release Semaphore
+					// if state is ok
+					// set state+data+currentLocalFlavor
+					break;
+				case REQUEST:
+					//TODO reply with DATA/REJECT
+					//check if flavor is ok (with clipboard)
+					//get Data/Flavors per clipboard
+					//Serialize DATA/Flavors
+					//send Data/Reject
+					break;
+				case REJECT:
+					//TODO Release Semaphore
+					// if state is ok
+					// set state + flavors
+					break;
+				case TEXT:
+					//TODO
+				//case TEXT:
 			}
 		}
-	}
-
-
-
-/*	public boolean sendPkg(Package pkg, boolean silent){
-		conn.getOutputStream().write();
-
-	}*/
-
-	private void changeState(State newState){changeState(newState,false);}
-	private void changeState(State newState, boolean silent){
-		this.s=newState;
-		if(!silent)
-			listener.handleStateChange(State.CONNECTING);
 	}
 
 
@@ -202,7 +124,7 @@ public class Client implements FlavorListener, Transferable, ClipboardOwner {
 	 */
 	@Override
 	public void flavorsChanged(FlavorEvent e) {
-		if(s == State.CONNECTED && sendPolicy.shouldSend(clipboard.getContents(this)) ){
+		if(this.conn.getState() == State.CONNECTED && sendPolicy.shouldSend(clipboard.getContents(this)) ){
 
 			DataFlavor[] flavors = clipboard.getAvailableDataFlavors();
 			byte[] data=Util.serializeFlavors(flavors);
