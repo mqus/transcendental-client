@@ -5,18 +5,22 @@ package transcendental.client.lib;
  */
 public enum State {
 	//The client is attempting to connect to the server.
-	Connecting,
+	CONNECTING,
 
 	//The client is connected to the server.
-	Connected,
+	CONNECTED,
 
-	//The connection Attempt Failed.
-	Failed,
+	//The connection Attempt FAILED.
+	FAILED,
 
 	//The client is not connected and will not try to attempt to connect.
-	NoConnection,
+	NO_CONNECTION,
 
-	//?
-	Exception,
+	//The Connection was lost.
+	CONNECTION_LOST,
+
+	//The client requested for clipboard data but has no answer yet
+	REQUEST_PENDING,
+
 
 }
