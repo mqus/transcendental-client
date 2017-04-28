@@ -1,8 +1,8 @@
 package transcendental.client.lib;
 
 import com.google.gson.JsonIOException;
-import com.google.gson.JsonParseException;
 import com.google.gson.JsonSyntaxException;
+
 
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -20,34 +20,42 @@ public class Connection {
 	private StateChangeListener listener=StateChangeListener.SILENT;
 
 	private Socket conn;
-	private State s=State.NO_CONNECTION;
+	private ConnState s= ConnState.NO_CONNECTION;
 	private Exception lastException=null;
 	private Client client=null;
 	private Reader r = null;
+	private SimpleBarrier broadcast;
+
 
 
 	public Connection() {
+		broadcast=new SimpleBarrier();
 	}
 
 	public Connection(String server, int port) {
+		this();
 		this.server = server;
 		this.port = port;
 	}
 
-	public void setServer(String server) {
+	public Connection setServer(String server) {
 		this.server = server;
+		return this;
 	}
 
-	public void setPort(int port) {
+	public Connection setPort(int port) {
 		this.port = port;
+		return this;
 	}
 
-	public void setConnectTimeout(int connectTimeout) {
+	public Connection setConnectTimeout(int connectTimeout) {
 		this.connectTimeout = connectTimeout;
+		return this;
 	}
 
-	public void setMaxRetryInterval(int maxRetryInterval) {
+	public Connection setMaxRetryInterval(int maxRetryInterval) {
 		this.maxRetryInterval = maxRetryInterval;
+		return this;
 	}
 
 	public void bind(Client cl){
@@ -65,12 +73,30 @@ public class Connection {
 	public Exception getLastException(){
 		return this.lastException;
 	}
-	public boolean send(byte[] pkg){
-		if(s!=State.CONNECTED)
+
+	public void reliableSend(byte[] pkg, boolean beStubborn){
+		//as long as send fails, try again!
+		while(send(pkg)==false)
+			//If there is no connection and currently no attempt to reconnect, abort the send anyway
+			if(!beStubborn && s==ConnState.NO_CONNECTION);
+				return;
+	}
+
+
+	/** sends the data to the server.
+	 * @param data the serialized package data (Packager.pack())
+	 * @return true if the send was successful, false if the Connection was interrupted or a timeout was reached.
+	 */
+	public boolean send(byte[] data){
+		if(s!= ConnState.CONNECTED)
 			return false;
-
-
-		//TODO
+		try {
+			conn.setTcpNoDelay(true);
+			conn.getOutputStream().write(data);
+		} catch (IOException e) {
+			exceptionOccured(e);
+			return false;
+		}
 		return true;
 	}
 
@@ -81,7 +107,7 @@ public class Connection {
 	 * 		{@code Package.BAD_PACKAGE}, if the package could not be decoded correctly.
 	 */
 	public Package recv(){
-		if(s!=State.CONNECTED)
+		if(s!= ConnState.CONNECTED)
 			return null;
 
 		try {
@@ -98,7 +124,7 @@ public class Connection {
 		if(this.client==null){
 			throw new Error("Didn't bind client to conn before attempting co open a connection.");
 		}
-		changeState(State.CONNECTING);
+		changeState(ConnState.CONNECTING);
 
 		try {
 			conn = new Socket(server, port);
@@ -108,8 +134,8 @@ public class Connection {
 			exceptionOccured(e);
 			return false;
 		}
-		//TODO? notify x that connection is open
-		changeState(State.CONNECTED);
+
+		changeState(ConnState.CONNECTED);
 		return true;
 	}
 
@@ -124,9 +150,10 @@ public class Connection {
 	}
 
 	public void disconnect(){
-		this.changeState(State.NO_CONNECTION);
+		changeState(ConnState.NO_CONNECTION);
 		try {
-			conn.close();
+			if(!conn.isClosed())
+				conn.close();
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
@@ -134,26 +161,25 @@ public class Connection {
 
 	private void retryConnect(){
 		int t=1;
-		while(s!=State.CONNECTED && s!=State.NO_CONNECTION){
+		while(s!= ConnState.CONNECTED && s!= ConnState.NO_CONNECTION){
 			try {
 				Thread.sleep(t*1000);
 			} catch (InterruptedException ignored) {
 
 			}
 
-			changeState(State.CONNECTING);
+			changeState(ConnState.CONNECTING);
 
 			try {
 				conn = new Socket(server, port);
 				conn.getOutputStream().write(this.client.getPackager().packHello());
-				changeState(State.CONNECTED);
+				changeState(ConnState.CONNECTED);
 			} catch (IOException e) {
 				exceptionOccured(e,true);
-				changeState(State.FAILED);
+				changeState(ConnState.FAILED);
 			}
 			t=Math.min(2*t,maxRetryInterval);
 		}
-		//TODO? trigger client
 	}
 
 	private void exceptionOccured(Exception e) {
@@ -161,30 +187,45 @@ public class Connection {
 	}
 
 	private void exceptionOccured(Exception e, boolean onlyTriggerStateChange){
-		if(s==State.NO_CONNECTION)return;
+		if(s== ConnState.NO_CONNECTION)return;
 
 		this.lastException=e;
-		changeState(State.EXCEPTION);
+		changeState(ConnState.EXCEPTION);
 
 		if(onlyTriggerStateChange)return;
 		
 		if(this.maxRetryInterval<=0){
-			changeState(State.NO_CONNECTION);
+			changeState(ConnState.NO_CONNECTION);
 		}else{
-			changeState(State.FAILED);
-
+			changeState(ConnState.FAILED);
+			new Thread(new Runnable() {
+				@Override
+				public void run() {
+					retryConnect();
+				}
+			}).start();
 		}
 	}
 
-	private void changeState(State newState){changeState(newState,false);}
-	private void changeState(State newState, boolean silent){
-		this.s=newState;
+	private void changeState(ConnState newState){changeState(newState,false);}
+	private void changeState(ConnState newState, boolean silent){
+		if(this.s==newState)
+			return;
+
 		if(!silent)
-			listener.handleStateChange(newState);
+			listener.handleConnStateChange(newState);
+
+		if(newState == ConnState.CONNECTED)
+			broadcast.signal();
+		this.s=newState;
 	}
 
-	public State getState(){
+	public ConnState getState(){
 		return s;
+	}
+
+	public void waitForConnection(){
+		broadcast.waitForSignal();
 	}
 
 }

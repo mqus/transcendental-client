@@ -30,8 +30,8 @@ public class Packager {
 		try {
 			//MAYBE: change to CBC
 			byte[] key = pass.getBytes("UTF-8");
-			encryptor = Cipher.getInstance("AES/ECB/PKCS7Padding");
-			decryptor = Cipher.getInstance("AES/ECB/PKCS7Padding");
+			encryptor = Cipher.getInstance("AES/ECB/PKCS5Padding");
+			decryptor = Cipher.getInstance("AES/ECB/PKCS5Padding");
 			SecretKeySpec sks= new SecretKeySpec(key, "AES");
 			encryptor.init(Cipher.ENCRYPT_MODE,sks);
 			decryptor.init(Cipher.DECRYPT_MODE,sks);

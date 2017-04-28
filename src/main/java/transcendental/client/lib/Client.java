@@ -3,10 +3,8 @@ package transcendental.client.lib;
 import java.awt.*;
 import java.awt.datatransfer.*;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.Reader;
-import java.net.Socket;
 import java.security.InvalidKeyException;
+import java.util.concurrent.Semaphore;
 
 /**
  * Created by markus on 26.01.17.
@@ -14,21 +12,21 @@ import java.security.InvalidKeyException;
 public class Client implements FlavorListener, Transferable, ClipboardOwner {
 	//config
 
-	private int port=19192;
-	private String server="localhost";
-	private Exception lastException=null;
 	private StateChangeListener listener=new DefaultListener(true);
 	private SendFilter sendPolicy=SendFilter.ACCEPT_ALL;
 	private RecvFilter recvPolicy=RecvFilter.ACCEPT_ALL;
+	private ClientState s=ClientState.INIT;
 
 
 	//runtimeVars
 	private Packager packager;
 	private Clipboard clipboard;
 	private int lastClipboardHolder=0;
-	private boolean isClipboardContentFromMe=false;
+	private boolean isClipboardContentFromOtherClient =false;
 	private DataFlavor[] lastflavors=new DataFlavor[0];
+	private byte[] data;
 	private Connection conn;
+	private Semaphore waitForRecv=new Semaphore(0);
 
 	public Client(String room,Connection conn) throws InvalidKeyException {
 		this.conn=conn;
@@ -37,6 +35,13 @@ public class Client implements FlavorListener, Transferable, ClipboardOwner {
 		this.clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
 	}
 
+	public Client setStateChangeListener(StateChangeListener listener){
+		if(listener==null)
+			this.listener=StateChangeListener.VERBOSE;
+		else
+			this.listener=listener;
+		return this;
+	}
 	Packager getPackager() {
 		return packager;
 	}
@@ -55,55 +60,125 @@ public class Client implements FlavorListener, Transferable, ClipboardOwner {
 
 	}
 
-
-	public void disconnect(){
-		//TODO
-		this.clipboard.removeFlavorListener(this);
-		this.conn.disconnect();
+	public Client setClipboard(Clipboard cb){
+		if(cb==null){
+			cb=Toolkit.getDefaultToolkit().getSystemClipboard();
+		}
+		this.clipboard=cb;
+		return this;
 	}
 
 
-	public void recvLoop(){
+	public void disconnect(){
+		//MAYBE disconnect properly
+
+		this.clipboard.removeFlavorListener(this);
+		this.conn.disconnect();
+		if(waitForRecv.hasQueuedThreads())
+			waitForRecv.release();
+	}
+
+	private void changeState(ClientState newState){
+		if(s==newState)return;
+		s=newState;
+		listener.handleClientStateChange(newState);
+	}
+	private void recvLoop(){
+		changeState(ClientState.INIT);
 		while(true){
 			Package pkg = conn.recv();
 			if(pkg == null){
-				//TODO
-			}else{
-				//TODO
+				if(conn.getState() == ConnState.FAILED){
+					conn.waitForConnection();
+					continue;
+				}
+				if(conn.getState() == ConnState.NO_CONNECTION)
+					//if disconnect is called from the outside, it will be called again here.
+					disconnect();
+					return;
 			}
+
 			switch(pkg.getType()){
 				case COPY:
-					//TODO Received Copy
-					// deserialize Flavors
-					// write to lastFlavors
-					//save ClientID
-					// clipoard.setContent(this,this)
-
+					//Another Client has provided the type of his clipboard content!
+					//Lets see what he got...
+					DataFlavor[] flavors = Util.deserializeFlavors(pkg.getContent());
+					if(recvPolicy.shouldRecv(flavors)) {
+						lastflavors=flavors;
+						lastClipboardHolder=pkg.getClientID();
+						clipboard.setContents(this,this);
+						isClipboardContentFromOtherClient = true;
+						changeState(ClientState.REQUEST_POSSIBLE);
+					}
 					break;
 				case DATA:
-					//TODO Release Semaphore
-					// if state is ok
-					// set state+data+currentLocalFlavor
+					if(s==ClientState.REQUEST_PENDING){
+						data = pkg.getContent();
+						changeState(ClientState.DATA_RECEIVED);
+					}
 					break;
 				case REQUEST:
-					//TODO reply with DATA/REJECT
-					//check if flavor is ok (with clipboard)
-					//get Data/Flavors per clipboard
-					//Serialize DATA/Flavors
-					//send Data/Reject
+					if(pkg.getClientID()==0){
+						//Own Data Request Failed
+						data = null;
+						lastflavors = null;
+						changeState(ClientState.REQUEST_FAILED);
+					}else{
+						if(s!=ClientState.DATA_ON_THIS_CLIENT)
+							replyWithReject(pkg.getClientID(), true);
+						changeState(ClientState.DATA_REQUESTED);
+
+						DataFlavor requestFlavor = Util.deserializeFlavor(pkg.getContent());
+						if(requestFlavor!=null && clipboard.isDataFlavorAvailable(requestFlavor)){
+							try {
+								byte[] data=Util.serializeData(clipboard.getContents(this),requestFlavor);
+								conn.reliableSend(getPackager().packData(data,pkg.getClientID()), false);
+							} catch(IOException e) {
+								//If errors occured while trying to copy from the clipboard, reply with an empty reject.
+								e.printStackTrace();
+								replyWithReject(pkg.getClientID(), true);
+
+							} catch(UnsupportedFlavorException e) {
+								//If the request still failed with the following Exception(we already checked the flavor),
+								// reject with the allowed Flavors anyway
+								e.printStackTrace();
+								replyWithReject(pkg.getClientID(), false);
+							}
+
+						}else{
+							replyWithReject(pkg.getClientID(), false);
+						}
+						changeState(ClientState.DATA_ON_THIS_CLIENT);
+					}
 					break;
 				case REJECT:
-					//TODO Release Semaphore
-					// if state is ok
-					// set state + flavors
+					//ignore the package if no one is waiting anymore
+					if(s==ClientState.REQUEST_PENDING){
+						if(pkg.getContent().length==0) {
+							//Own Data Request Failed
+							data = null;
+							lastflavors = null;
+							changeState(ClientState.REQUEST_FAILED);
+						}else{
+							lastflavors=Util.deserializeFlavors(pkg.getContent());
+							changeState(ClientState.REQUEST_REJECTED);
+						}
+					}
 					break;
 				case TEXT:
-					//TODO
-				//case TEXT:
+					//TODO implement TEXT package
+				case NULL:
+					//Bad package; discard
 			}
+			if(waitForRecv.hasQueuedThreads())
+				waitForRecv.release();
 		}
 	}
 
+	private void replyWithReject(int to, boolean empty){
+		byte[] data=empty?(new byte[0]):Util.serializeFlavors(clipboard.getAvailableDataFlavors());
+		conn.reliableSend(getPackager().packReject(data,to),false);
+	}
 
 	/**
 	 * Invoked when the target {@link Clipboard} of the listener
@@ -124,15 +199,22 @@ public class Client implements FlavorListener, Transferable, ClipboardOwner {
 	 */
 	@Override
 	public void flavorsChanged(FlavorEvent e) {
-		if(this.conn.getState() == State.CONNECTED && sendPolicy.shouldSend(clipboard.getContents(this)) ){
 
-			DataFlavor[] flavors = clipboard.getAvailableDataFlavors();
-			byte[] data=Util.serializeFlavors(flavors);
+		if(isClipboardContentFromOtherClient)
+			//The Client just took over the Clipboard, so this Callback shouldn't be executed.
+			return;
 
-			byte[] pkg=packager.packCopy(data);
-			//TODO Sendmess
+		if(this.conn.getState() == ConnState.CONNECTED)
+			changeState(ClientState.DATA_ON_THIS_CLIENT);
+			if(sendPolicy.shouldSend(clipboard.getContents(this))) {
 
-		}
+				DataFlavor[] flavors = clipboard.getAvailableDataFlavors();
+				byte[] data = Util.serializeFlavors(flavors);
+
+				byte[] pkg = packager.packCopy(data);
+				conn.reliableSend(pkg, false);
+
+			}
 	}
 
 
@@ -146,7 +228,7 @@ public class Client implements FlavorListener, Transferable, ClipboardOwner {
 	 */
 	@Override
 	public void lostOwnership(Clipboard clipboard, Transferable contents) {
-		isClipboardContentFromMe=false;
+		isClipboardContentFromOtherClient =false;
 	}
 
 	/**
@@ -190,18 +272,29 @@ public class Client implements FlavorListener, Transferable, ClipboardOwner {
 	 */
 	@Override
 	public Object getTransferData(DataFlavor flavor) throws UnsupportedFlavorException, IOException {
-		//TODO request   ||throws IOException
-
-		//TODO wait for incoming ||throws IOException
-		// with semaphore to wait for an incoming package
-		// with timeout
-
-		//TODO parse incoming ||throws UnsupportedFlavorException
-
-
-
-
-		return null;
+		byte[] data=Util.serializeFlavor(flavor);
+		boolean success=conn.send(getPackager().packRequest(data, lastClipboardHolder));
+		if(!success)
+			throw new IOException("Request Failed (reason: send failed)");
+		try {
+			waitForRecv.acquire();
+		} catch(InterruptedException e) {
+			e.printStackTrace();
+		}
+		if(s==ClientState.DATA_RECEIVED){
+			Object o=Util.deserializeData(this.data);
+			changeState(ClientState.REQUEST_POSSIBLE);
+			return o;
+		}else if(s==ClientState.REQUEST_REJECTED){
+			changeState(ClientState.REQUEST_POSSIBLE);
+			throw new UnsupportedFlavorException(flavor);
+		}else if(conn.getState()==ConnState.NO_CONNECTION){
+			throw new IOException("Request Failed (reason: disconnect)");
+		}else{
+			ClientState cs=s;
+			changeState(ClientState.INIT);
+			throw new IOException("Request Failed (reason: reject," + cs + ")");
+		}
 	}
 }
 
