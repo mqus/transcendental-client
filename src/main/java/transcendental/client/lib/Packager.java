@@ -149,15 +149,9 @@ public class Packager {
 	}
 
 	private static byte[] serialize(SerializablePackage pkg) {
-		String pcon="",s = g.toJson(pkg);
+		String s = g.toJson(pkg);
+
 		try {
-			byte[] pc=pkg.getContent();
-			pcon = pc==null?"<empty>":new String(pc);
-		} catch(BadPaddingException e) {
-			e.printStackTrace();
-		}
-		try {
-			System.out.println("serpkg:"+pcon+" || "+s);
 			return s.getBytes("UTF-8");
 		} catch (UnsupportedEncodingException e) {
 			Util.ohMyGodUtf8IsNotSupportedWhatShouldIDo(e);

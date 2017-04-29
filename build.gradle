@@ -1,9 +1,10 @@
 group 'transcendental'
-version '1.0-SNAPSHOT'
+version '1.0.0'
 
 apply plugin: 'java'
 //apply plugin: 'java-library'
 apply plugin: 'application'
+apply plugin: 'maven-publish'
 sourceCompatibility = 1.7
 
 mainClassName = 'transcendental.client.example.SimpleClient'
