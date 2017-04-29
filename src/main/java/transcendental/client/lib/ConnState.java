@@ -35,9 +35,4 @@ public enum ConnState {
 	 */
 	EXCEPTION,
 
-
-	//The client requested for clipboard data but has no answer yet
-	//REQUEST_PENDING,
-
-
 }

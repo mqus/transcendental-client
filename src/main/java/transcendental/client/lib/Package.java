@@ -59,6 +59,10 @@ public class Package {
 		return content;
 	}
 
+	public String toString(){
+		String content=getContent()!=null?new String(getContent()):"<null>";
+		return "{"+getType() + ", "+ getClientID() + ", [ "+ content +" ]}";
+	}
 /*
 	public void setType(Type type) {
 		this.type = type;

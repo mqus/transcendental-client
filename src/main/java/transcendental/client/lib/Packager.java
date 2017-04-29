@@ -116,20 +116,22 @@ public class Packager {
 
 	// converting methods
 	private byte[] encrypt(byte[] cleartext) {
-		try {
-			return encryptor.doFinal(cleartext);
-		} catch (IllegalBlockSizeException | BadPaddingException e) {
-			e.printStackTrace();
-			throw new Error(e);
-		}
+		//try {
+			return cleartext;//FIXME
+			//return encryptor.doFinal(cleartext);
+		//} catch (IllegalBlockSizeException | BadPaddingException e) {
+		//	e.printStackTrace();
+		//	throw new Error(e);
+		//}
 	}
 
 	private byte[] decrypt(byte[] cryptotext) throws BadPaddingException{
-		try {
-			return decryptor.doFinal(cryptotext);
-		} catch (IllegalBlockSizeException e) {
-			throw new Error(e);
-		}
+		//try {
+			return cryptotext;//FIXME
+			//return decryptor.doFinal(cryptotext);
+		//} catch (IllegalBlockSizeException e) {
+		//	throw new Error(e);
+		//}
 	}
 
 	private static String encodeBytes(byte[] bytes) {
@@ -141,12 +143,19 @@ public class Packager {
 	}
 
 	private static byte[] serialize(SerializablePackage pkg) {
-		String s = g.toJson(pkg);
+		String pcon="",s = g.toJson(pkg);
 		try {
+			byte[] pc=pkg.getContent();
+			pcon = pc==null?"<empty>":new String(pc);
+		} catch(BadPaddingException e) {
+			e.printStackTrace();
+		}
+		try {
+			System.out.println("serpkg:"+pcon+" || "+s);
 			return s.getBytes("UTF-8");
 		} catch (UnsupportedEncodingException e) {
 			Util.ohMyGodUtf8IsNotSupportedWhatShouldIDo(e);
-			//is not reached
+			//is not reached because an Error is thrown
 			return new byte[0];
 		}
 	}
