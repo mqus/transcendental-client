@@ -118,6 +118,7 @@ public class Client implements FlavorListener, Transferable, ClipboardOwner {
 						data = pkg.getContent();
 						changeState(ClientState.DATA_RECEIVED);
 					}
+
 					break;
 				case REQUEST:
 					if(pkg.getClientID()==0){
@@ -280,6 +281,7 @@ public class Client implements FlavorListener, Transferable, ClipboardOwner {
 		boolean success=conn.send(getPackager().packRequest(data, lastClipboardHolder));
 		if(!success)
 			throw new IOException("Request Failed (reason: send failed)");
+		changeState(ClientState.REQUEST_PENDING);
 		try {
 			waitForRecv.acquire();
 		} catch(InterruptedException e) {
