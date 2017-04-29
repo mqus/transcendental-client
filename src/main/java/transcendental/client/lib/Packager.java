@@ -122,22 +122,22 @@ public class Packager {
 
 	// converting methods
 	private byte[] encrypt(byte[] cleartext) {
-		//try {
-			return cleartext;//FIXME
-			//return encryptor.doFinal(cleartext);
-		//} catch (IllegalBlockSizeException | BadPaddingException e) {
-		//	e.printStackTrace();
-		//	throw new Error(e);
-		//}
+		try {
+			//return cleartext;//FIdXME
+			return encryptor.doFinal(cleartext);
+		} catch (IllegalBlockSizeException | BadPaddingException e) {
+			e.printStackTrace();
+			throw new Error(e);
+		}
 	}
 
 	private byte[] decrypt(byte[] cryptotext) throws BadPaddingException{
-		//try {
-			return cryptotext;//FIXME
-			//return decryptor.doFinal(cryptotext);
-		//} catch (IllegalBlockSizeException e) {
-		//	throw new Error(e);
-		//}
+		try {
+		//	return cryptotext;//FIdXME
+			return decryptor.doFinal(cryptotext);
+		} catch (IllegalBlockSizeException e) {
+			throw new Error(e);
+		}
 	}
 
 	private static String encodeBytes(byte[] bytes) {
