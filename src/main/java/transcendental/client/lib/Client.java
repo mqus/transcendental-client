@@ -210,14 +210,11 @@ public class Client implements FlavorListener, Transferable, ClipboardOwner {
 		if(this.conn.getState() == ConnState.CONNECTED)
 			changeState(ClientState.DATA_ON_THIS_CLIENT);
 			if(sendPolicy.shouldSend(clipboard.getContents(this))) {
-				System.out.println("sending...");
-
 				DataFlavor[] flavors = clipboard.getAvailableDataFlavors();
 				byte[] data = Util.serializeFlavors(flavors);
 
 				byte[] pkg = packager.packCopy(data);
 				conn.reliableSend(pkg, false);
-				System.out.println("sent");
 
 			}
 	}
