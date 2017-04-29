@@ -1,7 +1,7 @@
 # transcendental-client
-A Client-Library and a simple implementation of a Client for the transcendental Clipboard Server
+this repository contains a java client-library and a simple implementation of a client for the transcendental clipboard sync server, which shares your Clipboard across devices and supports not only text, but also **images and other content**.
 
-The Client now mostly works but there may be quite some Bugs which i have overlooked.
+The Client now mostly works but there may be quite some bugs which i have overlooked.
 
 To let the client run, a running server is necessary, the server is provided in [https://github.com/mqus/transcendental](https://github.com/mqus/transcendental)
 
