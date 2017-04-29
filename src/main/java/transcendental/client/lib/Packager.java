@@ -5,10 +5,10 @@ import com.google.gson.JsonIOException;
 import com.google.gson.JsonParseException;
 import com.google.gson.JsonSyntaxException;
 import com.google.gson.annotations.SerializedName;
+import com.google.gson.stream.JsonReader;
 import org.apache.commons.codec.binary.Base64;
 
-import java.io.Reader;
-import java.io.UnsupportedEncodingException;
+import java.io.*;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import javax.crypto.*;
@@ -100,6 +100,12 @@ public class Packager {
 			this.content = encodeBytes(encrypt(content));
 		}
 
+		private SerializablePackage(SerializablePackage pkg) {
+			this.type=pkg.type;
+			this.clientID=pkg.clientID;
+			this.content=pkg.content;
+		}
+
 		public Package.Type getType() {
 			return type;
 		}
@@ -161,7 +167,13 @@ public class Packager {
 	}
 
 	public Package deserialize(Reader input) throws JsonIOException, JsonSyntaxException{
-		SerializablePackage pkg = g.fromJson(input, SerializablePackage.class);
+		JsonReader jr= null;
+		jr = new JsonReader(input);
+
+		SerializablePackage pkg_rootless = g.fromJson(jr, SerializablePackage.class);
+		//Assign this Packager to pkg (through reinitialization):
+		SerializablePackage pkg=new SerializablePackage(pkg_rootless);
+
 		try {
 			return new Package(pkg.getType(), pkg.getClientID(), pkg.getContent());
 		} catch (BadPaddingException e) {
