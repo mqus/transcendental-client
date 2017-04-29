@@ -8,6 +8,8 @@ import java.security.InvalidKeyException;
  * Created by markus on 26.01.17.
  */
 public class SimpleClient implements StateChangeListener{
+	public static final String ver = "v0.6.0";
+
 	public static final String ANSI_RESET = "\u001B[0m";
 	public static final String ANSI_BLACK = "\u001B[30m";
 	public static final String ANSI_RED = "\u001B[31m";
@@ -23,11 +25,11 @@ public class SimpleClient implements StateChangeListener{
 	Connection conn;
 	Client client;
 
-	public SimpleClient() throws InvalidKeyException {
+	public SimpleClient(String server, int port, String passwd) throws InvalidKeyException {
 		//setup
-		conn = new Connection("localhost",19192);
+		conn = new Connection(server,port);
 		conn.setStateChangeListener(this);
-		client = new Client("RaumRaumRaumRaum", conn);
+		client = new Client(passwd, conn);
 		client.setStateChangeListener(this);
 
 	}
@@ -54,8 +56,73 @@ public class SimpleClient implements StateChangeListener{
 
 
 	public static void main(String[] args) throws InvalidKeyException {
-		SimpleClient sc = new SimpleClient();
+		//defaults:
+		String server="localhost", passwd="RaumRaumRaumRaum";
+		int port=19192;
+
+		for(int i = 0; i < args.length; i++) {
+			if(args[i].startsWith("-")) {
+				switch(args[i]) {
+					case "-p":
+					case "--port":
+						port = Integer.valueOf(args[++i]);
+						break;
+					case "-s":
+					case "--server":
+						server = args[++i];
+						if(server.contains(":")){
+							//take the argument as a server:port option:
+							String[] a=server.split(":",2);
+							server=a[0];
+							port=Integer.valueOf(a[1]);
+						}
+						break;
+					case "-r":
+					case "-k":
+					case "--password":
+					case "--key":
+					case "--room":
+						passwd = args[++i];
+						break;
+					case "-h":
+					case "--help":
+						showHelp();
+						return;
+					case "-v":
+					case "--version":
+						showVersion(false);
+						return;
+				}
+			}else{
+				//take the argument as a server:port option:
+				String[] a=args[i].split(":",2);
+				server=a[0];
+				port=Integer.valueOf(a[1]);
+			}
+
+		}
+
+		SimpleClient sc = new SimpleClient(server, port, passwd);
 		sc.go();
+	}
+
+
+	private static void showHelp(){
+		showVersion(true);
+		System.out.println("Usage: transcendental-client [OPTIONS] [<server>:<port>]");
+		System.out.println("  -h\t--help\t \t outputs this help");
+		System.out.println("  -v\t--version\t \t outputs the version");
+		System.out.println("  -s\t--server\t<server>[:<port>]\t specifies the server which distributes the data, default:localhost");
+		System.out.println("  -p\t--port\t<port>\t specifies the server port, default:19192");
+		System.out.println("  -r|-k\t--password | --room | --key\t<passwd>\t specifies the encryption keyword and at the same time the room*, default:RaumRaumRaumRaum");
+		System.out.println("\n   (*) a room is the separation unit in which the server distributes the clipboard content, there can be multiple rooms on a server.");
+	}
+
+	private static void showVersion(boolean extended){
+		System.out.println("Transcendental-SimpleClient "+ver);
+		if(extended){
+			System.out.println("\ta simple deamon-like Client for sharing the local Clipboard with other Devices.");
+		}
 	}
 
 }
