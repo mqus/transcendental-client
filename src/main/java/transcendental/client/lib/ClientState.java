@@ -3,7 +3,7 @@ package transcendental.client.lib;
 /**
  * Created by markus on 26.01.17.
  */
-public enum ClientState{
+public enum ClientState {
 
 	/**
 	 * The client currently has no clipboard content, not remotely and not local
@@ -16,7 +16,7 @@ public enum ClientState{
 	REQUEST_POSSIBLE,
 
 	/**
-	 * 	The client requested for clipboard data but has no answer yet
+	 * The client requested for clipboard data but has no answer yet
 	 */
 	REQUEST_PENDING,
 

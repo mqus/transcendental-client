@@ -1,7 +1,5 @@
 package transcendental.client.lib;
 
-import javax.xml.crypto.Data;
-import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.Transferable;
 
 /**

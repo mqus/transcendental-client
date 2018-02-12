@@ -1,10 +1,6 @@
 package transcendental.client.lib;
 
-import com.google.gson.*;
 import com.google.gson.annotations.SerializedName;
-import org.apache.commons.codec.binary.Base64;
-
-import java.io.Reader;
 
 /**
  * Created by markus on 28.01.17.
@@ -14,16 +10,16 @@ public class Package {
 	/**
 	 * A fixed Package to indicate a broken Package.
 	 */
-	public static final Package BAD_PACKAGE = new Package(Type.NULL,0,null);
+	public static final Package BAD_PACKAGE = new Package(Type.NULL, 0, null);
 
 
 	private Type type;
 
-	private int clientID =0;
+	private int clientID = 0;
 
 	private byte[] content;
 
-	public enum Type{
+	public enum Type {
 		@SerializedName("Hello")
 		HELLO,
 		@SerializedName("Text")
@@ -59,9 +55,9 @@ public class Package {
 		return content;
 	}
 
-	public String toString(){
-		String content=getContent()!=null?new String(getContent()):"<null>";
-		return "{"+getType() + ", "+ getClientID() + ", [ "+ content +" ]}";
+	public String toString() {
+		String content = getContent() != null ? new String(getContent()) : "<null>";
+		return "{" + getType() + ", " + getClientID() + ", [ " + content + " ]}";
 	}
 /*
 	public void setType(Type type) {

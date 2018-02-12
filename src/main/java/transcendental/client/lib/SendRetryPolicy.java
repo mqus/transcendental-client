@@ -7,18 +7,24 @@ import java.awt.datatransfer.Transferable;
  */
 public interface SendRetryPolicy {
 
-	/**Determines if a Retry of a <b>Copy</b>Package is performed if the Connection was interrupted.
+	/**
+	 * Determines if a Retry of a <b>Copy</b>Package is performed if the Connection was interrupted.
+	 *
 	 * @param t the Content of the Clipboard which will be retransferred
 	 * @return a negative Value if no retry should be performed, or the amount of milliseconds to wait between each retry
 	 */
 	int shouldRetrySendingCopy(Transferable t);
 
-	/**Determines if a Retry of a <b>Request</b>Package is performed if the Connection was interrupted.
+	/**
+	 * Determines if a Retry of a <b>Request</b>Package is performed if the Connection was interrupted.
+	 *
 	 * @return a negative Value if no retry should be performed, or the amount of milliseconds to wait between each retry
 	 */
 	int shouldRetrySendingRequest();
 
-	/**Determines if a Retry of a <b>Data</b>Package is performed if the Connection was interrupted.
+	/**
+	 * Determines if a Retry of a <b>Data</b>Package is performed if the Connection was interrupted.
+	 *
 	 * @param t the Content of the Clipboard which will be retransferred
 	 * @return a negative Value if no retry should be performed, or the amount of milliseconds to wait between each retry
 	 */
@@ -27,7 +33,7 @@ public interface SendRetryPolicy {
 
 }
 
-class SimpleRetryPolicy implements SendRetryPolicy{
+class SimpleRetryPolicy implements SendRetryPolicy {
 	final int shouldRetry;
 
 
@@ -36,7 +42,7 @@ class SimpleRetryPolicy implements SendRetryPolicy{
 	}
 
 	SimpleRetryPolicy(boolean shouldRetry) {
-		this.shouldRetry = shouldRetry?500:-1;
+		this.shouldRetry = shouldRetry ? 500 : -1;
 	}
 
 	/**

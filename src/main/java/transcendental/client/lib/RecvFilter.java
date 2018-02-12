@@ -21,6 +21,7 @@ public interface RecvFilter {
 
 	/**
 	 * The implementing Class should decide, provided a List of flavors, if it wants to accept that Clipboard Content or not.
+	 *
 	 * @param list the given List of Flavors
 	 * @return true, if the data will be accepted and false, if not.
 	 */

@@ -11,6 +11,7 @@ public interface StateChangeListener {
 	 * handleConnStateChange is called directly after the Connection State changes.
 	 * the Connection waits for that callback to do anything and continues after
 	 * its completion.
+	 *
 	 * @param newState the State the Connection changes to.
 	 */
 	void handleConnStateChange(ConnState newState);
@@ -19,10 +20,12 @@ public interface StateChangeListener {
 	 * handleClientStateChange is called directly after the Client State changes.
 	 * the Client waits for that callback to do anything and continues after
 	 * its completion.
+	 *
 	 * @param newState the State the Client changes to.
 	 */
 	void handleClientStateChange(ClientState newState);
 }
+
 class DefaultListener implements StateChangeListener {
 	private boolean verbose;
 
@@ -32,13 +35,13 @@ class DefaultListener implements StateChangeListener {
 
 	@Override
 	public void handleConnStateChange(ConnState newState) {
-		if(verbose) System.out.println("New Connection State: "+newState);
+		if(verbose) System.out.println("New Connection State: " + newState);
 		//Do nothing else
 	}
 
 	@Override
 	public void handleClientStateChange(ClientState newState) {
-		if(verbose) System.out.println("New Client State: "+newState);
+		if(verbose) System.out.println("New Client State: " + newState);
 		//Do nothing else
 	}
 }
