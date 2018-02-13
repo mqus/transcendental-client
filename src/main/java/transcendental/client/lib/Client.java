@@ -28,12 +28,24 @@ public class Client implements FlavorListener, Transferable, ClipboardOwner {
 	private Connection conn;
 	private Semaphore waitForRecv = new Semaphore(0);
 	private DataFlavor requestFlavor;
+	private boolean eager_copy;
 
 	public Client(String room, Connection conn) throws InvalidKeyException {
 		this.conn = conn;
 		conn.bind(this);
 		this.packager = new Packager(room);
 		this.clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
+		this.eager_copy = isClipboardEager();
+	}
+
+	private boolean isClipboardEager() {
+		String name = System.getProperty("os.name").toLowerCase();
+		if (name.contains("windows"))
+			return true;
+		if (name.contains("linux"))
+			return false;
+		//TODO moar os
+		return false;
 	}
 
 	public Client setStateChangeListener(StateChangeListener listener) {
@@ -117,9 +129,15 @@ public class Client implements FlavorListener, Transferable, ClipboardOwner {
 					if(recvPolicy.shouldRecv(flavors)) {
 						lastflavors = flavors;
 						lastClipboardHolder = pkg.getClientID();
-						clipboard.setContents(this, this);
-						isClipboardContentFromOtherClient = true;
-						changeState(ClientState.REQUEST_POSSIBLE);
+						if (eager_copy) {
+							isClipboardContentFromOtherClient = true;
+							changeState(ClientState.REQUEST_POSSIBLE);
+							new Thread(() -> clipboard.setContents(this, this)).start();
+						} else {
+							isClipboardContentFromOtherClient = true;
+							clipboard.setContents(this, this);
+							changeState(ClientState.REQUEST_POSSIBLE);
+						}
 					}
 					break;
 				case DATA:
