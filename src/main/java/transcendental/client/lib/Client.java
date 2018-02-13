@@ -4,6 +4,8 @@ import java.awt.*;
 import java.awt.datatransfer.*;
 import java.io.IOException;
 import java.security.InvalidKeyException;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.concurrent.Semaphore;
 
 /**
@@ -74,9 +76,9 @@ public class Client implements FlavorListener, Transferable, ClipboardOwner {
 	}
 
 	public Client setClipboard(Clipboard cb) {
-		if(cb == null) {
+		if (cb == null)
 			cb = Toolkit.getDefaultToolkit().getSystemClipboard();
-		}
+
 		this.clipboard = cb;
 		return this;
 	}
@@ -155,7 +157,7 @@ public class Client implements FlavorListener, Transferable, ClipboardOwner {
 						changeState(ClientState.REQUEST_FAILED);
 					} else {
 						if(s != ClientState.DATA_ON_THIS_CLIENT)
-							replyWithReject(pkg.getClientID(), true);
+							replyWithReject(pkg.getClientID(), null);
 						requestFlavor = Util.deserializeFlavor(pkg.getContent());
 						changeState(ClientState.DATA_REQUESTED);
 
@@ -164,21 +166,17 @@ public class Client implements FlavorListener, Transferable, ClipboardOwner {
 								byte[] data = Util.serializeData(clipboard.getContents(this), requestFlavor);
 								requestFlavor=null;
 								conn.reliableSend(getPackager().packData(data, pkg.getClientID()), false);
-							} catch(IOException e) {
-								//If errors occured while trying to copy from the clipboard, reply with an empty reject.
+							} catch (IOException | UnsupportedFlavorException e) {
+								//If errors occured while trying to copy from the clipboard,
+								//reply with the List minus the current flavour.
 								e.printStackTrace();
-								replyWithReject(pkg.getClientID(), true);
+								replyWithReject(pkg.getClientID(), requestFlavor);
 
-							} catch(UnsupportedFlavorException e) {
-								//If the request still failed with the following Exception(we already checked the flavor),
-								// reject with the allowed Flavors anyway
-								e.printStackTrace();
-								replyWithReject(pkg.getClientID(), false);
 							}
 							requestFlavor=null;
 
 						} else {
-							replyWithReject(pkg.getClientID(), false);
+							replyWithReject(pkg.getClientID(), requestFlavor);
 						}
 						changeState(ClientState.DATA_ON_THIS_CLIENT);
 					}
@@ -207,8 +205,15 @@ public class Client implements FlavorListener, Transferable, ClipboardOwner {
 		}
 	}
 
-	private void replyWithReject(int to, boolean empty) {
-		byte[] data = empty ? (new byte[0]) : Util.serializeFlavors(clipboard.getAvailableDataFlavors());
+	private void replyWithReject(int to, DataFlavor naFlavor) {
+		byte[] data;
+		if (naFlavor == null)
+			data = new byte[0];
+		else {
+			ArrayList<DataFlavor> flavors = new ArrayList<>(Arrays.asList(clipboard.getAvailableDataFlavors()));
+			flavors.remove(naFlavor);
+			data = Util.serializeFlavors(flavors.toArray(new DataFlavor[0]));
+		}
 		conn.reliableSend(getPackager().packReject(data, to), false);
 	}
 
@@ -302,7 +307,7 @@ public class Client implements FlavorListener, Transferable, ClipboardOwner {
 	 * @see DataFlavor#getRepresentationClass
 	 */
 	@Override
-	public Object getTransferData(DataFlavor flavor) throws UnsupportedFlavorException, IOException {
+	synchronized public Object getTransferData(DataFlavor flavor) throws UnsupportedFlavorException, IOException {
 		if(s==ClientState.INIT)
 			throw new IOException("Request Failed (reason: remote clipboard lost)");
 		byte[] data = Util.serializeFlavor(flavor);

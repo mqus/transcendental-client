@@ -1,12 +1,8 @@
 package transcendental.test;
 
-import transcendental.client.lib.Packager;
-
 import java.awt.*;
 import java.awt.datatransfer.Clipboard;
 import java.awt.datatransfer.DataFlavor;
-import java.io.IOException;
-import java.net.Socket;
 import java.security.InvalidKeyException;
 
 /**
@@ -37,19 +33,19 @@ public class Main {
 //		System.out.println(DataFlavor.imageFlavor.toString());
 //		System.out.println(new DataFlavor("text/html"));
 
-		Socket clientSocket;
-		try {
-			Packager pr = new Packager("RaumRaumRaumRaum1");
-			clientSocket = new Socket("localhost", 19192);
-			byte[] p = pr.packHello();
-			clientSocket.setTcpNoDelay(true);
-			clientSocket.getOutputStream().write(p);
-			int n = clientSocket.getInputStream().read(p);
-			System.out.println("read:" + n);
-		} catch(IOException e) {
-			e.printStackTrace();
-
-		}
+//		Socket clientSocket;
+//		try {
+//			Packager pr = new Packager("RaumRaumRaumRaum1");
+//			clientSocket = new Socket("localhost", 19192);
+//			byte[] p = pr.packHello();
+//			clientSocket.setTcpNoDelay(true);
+//			clientSocket.getOutputStream().write(p);
+//			int n = clientSocket.getInputStream().read(p);
+//			System.out.println("read:" + n);
+//		} catch(IOException e) {
+//			e.printStackTrace();
+//
+//		}
 
 	}
 
