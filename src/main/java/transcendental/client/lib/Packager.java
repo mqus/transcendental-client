@@ -29,7 +29,7 @@ public class Packager {
 		setPass(pass);
 	}
 
-	public void setPass(String pass) throws InvalidKeyException {
+	private void setPass(String pass) throws InvalidKeyException {
 		try {
 			//MAYBE: change to CBC
 			byte[] key = pass.getBytes("UTF-8");
@@ -44,8 +44,6 @@ public class Packager {
 			e.printStackTrace();
 			throw new Error(e);
 		}
-
-
 	}
 
 	public byte[] packHello() {
@@ -82,45 +80,23 @@ public class Packager {
 		return serialize(pkg);
 	}
 
-	class SerializablePackage {
-		@SerializedName("Type")
-		private Package.Type type;
+	public Package deserialize(Reader input) throws JsonIOException, JsonSyntaxException {
+		JsonReader jr = new JsonReader(input);
 
-		@SerializedName("ClientID")
-		private int clientID = 0;
+		SerializablePackage pkg_rootless = g.fromJson(jr, SerializablePackage.class);
+		//if the connection was interupted, pkg_rootless is null, return that null
+		if (pkg_rootless == null)
+			return null;
 
-		@SerializedName("Content")
-		private String content;
+		//Assign this Packager to pkg (through reinitialization):
+		SerializablePackage pkg = new SerializablePackage(pkg_rootless);
 
-		public SerializablePackage(Package.Type type, byte[] content) {
-			this.type = type;
-			this.content = encodeBytes(encrypt(content));
+		try {
+			return new Package(pkg.getType(), pkg.getClientID(), pkg.getContent());
+		} catch (BadPaddingException e) {
+			e.printStackTrace();
+			return Package.BAD_PACKAGE;
 		}
-
-		public SerializablePackage(Package.Type type, int clientID, byte[] content) {
-			this.type = type;
-			this.clientID = clientID;
-			this.content = encodeBytes(encrypt(content));
-		}
-
-		private SerializablePackage(SerializablePackage pkg) {
-			this.type = pkg.type;
-			this.clientID = pkg.clientID;
-			this.content = pkg.content;
-		}
-
-		public Package.Type getType() {
-			return type;
-		}
-
-		public int getClientID() {
-			return clientID;
-		}
-
-		public byte[] getContent() throws BadPaddingException {
-			return decrypt(decodeBytes(content));
-		}
-
 	}
 
 	// converting methods
@@ -163,20 +139,45 @@ public class Packager {
 		}
 	}
 
-	public Package deserialize(Reader input) throws JsonIOException, JsonSyntaxException {
-		JsonReader jr = null;
-		jr = new JsonReader(input);
+	class SerializablePackage {
+		@SerializedName("Type")
+		private Package.Type type;
 
-		SerializablePackage pkg_rootless = g.fromJson(jr, SerializablePackage.class);
-		//Assign this Packager to pkg (through reinitialization):
-		SerializablePackage pkg = new SerializablePackage(pkg_rootless);
+		@SerializedName("ClientID")
+		private int clientID = 0;
 
-		try {
-			return new Package(pkg.getType(), pkg.getClientID(), pkg.getContent());
-		} catch(BadPaddingException e) {
-			e.printStackTrace();
-			return Package.BAD_PACKAGE;
+		@SerializedName("Content")
+		private String content;
+
+		SerializablePackage(Package.Type type, byte[] content) {
+			this.type = type;
+			this.content = encodeBytes(encrypt(content));
 		}
+
+		SerializablePackage(Package.Type type, int clientID, byte[] content) {
+			this.type = type;
+			this.clientID = clientID;
+			this.content = encodeBytes(encrypt(content));
+		}
+
+		private SerializablePackage(SerializablePackage pkg) {
+			this.type = pkg.type;
+			this.clientID = pkg.clientID;
+			this.content = pkg.content;
+		}
+
+		Package.Type getType() {
+			return type;
+		}
+
+		int getClientID() {
+			return clientID;
+		}
+
+		byte[] getContent() throws BadPaddingException {
+			return decrypt(decodeBytes(content));
+		}
+
 	}
 
 }

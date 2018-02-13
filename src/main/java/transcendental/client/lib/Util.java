@@ -7,8 +7,6 @@ import java.io.*;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Vector;
-import java.util.concurrent.locks.ReadWriteLock;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 
 /**
@@ -79,7 +77,7 @@ public class Util {
 	}
 
 	public static DataFlavor deserializeFlavor(byte[] data) {
-		String mimeType = "";
+		String mimeType;
 		try {
 			mimeType = new String(data, "UTF-8");
 		} catch(UnsupportedEncodingException e) {
@@ -156,7 +154,7 @@ class Fit extends Error {
 	 *                unknown.)
 	 * @since 1.4
 	 */
-	public Fit(String message, Throwable cause) {
+	Fit(String message, Throwable cause) {
 		super("This Program just threw a Fit: " + message, cause);
 	}
 }
@@ -166,30 +164,36 @@ class Fit extends Error {
  * Just a simple broadcast barrier, where a signal releases all waiters, waits for them to be started and resumes its work.
  */
 class SimpleBarrier {
-	private ReadWriteLock rwl;
+//	private ReadWriteLock rwl;
 
 	SimpleBarrier() {
-		rwl = new ReentrantReadWriteLock(true);
-		//Set the write-lock by default so all waiting processes will wait for it to be released.
-		rwl.writeLock().lock();
+//		rwl = new ReentrantReadWriteLock(true);
+//		//Set the write-lock by default so all waiting processes will wait for it to be released.
+//		rwl.writeLock().lock();
 	}
 
 	/**
 	 * The current thread sleeps till the barrier receives a signal call.
 	 */
-	void waitForSignal() {
+	synchronized void waitForSignal() {
+		try {
+			wait();
+		} catch (InterruptedException ignored) {
+
+		}
 		//Wait for the WriteLock to be released and then allow the write-lock to lock the state again.
-		rwl.readLock().lock();
-		rwl.readLock().unlock();
+//		rwl.readLock().lock();
+//		rwl.readLock().unlock();
 	}
 
 	/**
 	 * releases all sleeping threads which wait for a signal on this barrier, resets the barrier and returns.
 	 */
-	void signal() {
+	synchronized void signal() {
+		notifyAll();
 		//allow all read-locks to be locked and then unlocked to release all waiting processes.
-		rwl.writeLock().unlock();
+//		rwl.writeLock().unlock();
 		//then begin accumulating all read-locks again.
-		rwl.writeLock().lock();
+//		rwl.writeLock().lock();
 	}
 }

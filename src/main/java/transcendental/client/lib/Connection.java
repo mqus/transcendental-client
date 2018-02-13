@@ -74,10 +74,10 @@ public class Connection {
 
 	public void reliableSend(byte[] pkg, boolean beStubborn) {
 		//as long as send fails, try again!
-		while(send(pkg) == false)
+		while (!send(pkg))
 			//If there is no connection and currently no attempt to reconnect, abort the send anyway
-			if(!beStubborn && s == ConnState.NO_CONNECTION) ;
-		return;
+			if (!beStubborn && s == ConnState.NO_CONNECTION)
+				return;
 	}
 
 
@@ -112,7 +112,12 @@ public class Connection {
 			return null;
 
 		try {
-			return this.client.getPackager().deserialize(r);
+			Package pkg = this.client.getPackager().deserialize(r);
+			if (pkg == null) {
+				//connection was lost, handle it:
+				exceptionOccured(new IOException("Connection lost"));
+			}
+			return pkg;
 		} catch(JsonSyntaxException e) {
 			return Package.BAD_PACKAGE;
 		} catch(JsonIOException e) {
@@ -199,12 +204,7 @@ public class Connection {
 			changeState(ConnState.NO_CONNECTION);
 		} else {
 			changeState(ConnState.FAILED);
-			new Thread(new Runnable() {
-				@Override
-				public void run() {
-					retryConnect();
-				}
-			}).start();
+			new Thread(this::retryConnect).start();
 		}
 	}
 

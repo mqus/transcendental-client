@@ -304,7 +304,7 @@ public class Client implements FlavorListener, Transferable, ClipboardOwner {
 	@Override
 	public Object getTransferData(DataFlavor flavor) throws UnsupportedFlavorException, IOException {
 		if(s==ClientState.INIT)
-			throw new IOException("Request Failed (reason: remote clipboard lost");
+			throw new IOException("Request Failed (reason: remote clipboard lost)");
 		byte[] data = Util.serializeFlavor(flavor);
 		boolean success = conn.send(getPackager().packRequest(data, lastClipboardHolder));
 		if(!success)

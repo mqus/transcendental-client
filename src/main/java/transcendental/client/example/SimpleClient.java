@@ -8,21 +8,21 @@ import java.security.InvalidKeyException;
  * Created by markus on 26.01.17.
  */
 public class SimpleClient implements StateChangeListener {
-	public static final String ver = "v0.6.0";
+	private static final String ver = "v0.6.0";
 
-	public static final String ANSI_RESET = "\u001B[0m";
-	public static final String ANSI_BLACK = "\u001B[30m";
-	public static final String ANSI_RED = "\u001B[31m";
-	public static final String ANSI_GREEN = "\u001B[32m";
-	public static final String ANSI_YELLOW = "\u001B[33m";
-	public static final String ANSI_BLUE = "\u001B[34m";
-	public static final String ANSI_PURPLE = "\u001B[35m";
-	public static final String ANSI_CYAN = "\u001B[36m";
-	public static final String ANSI_WHITE = "\u001B[37m";
+	private static final String ANSI_RESET = "\u001B[0m";
+	private static final String ANSI_BLACK = "\u001B[30m";
+	private static final String ANSI_RED = "\u001B[31m";
+	private static final String ANSI_GREEN = "\u001B[32m";
+	private static final String ANSI_YELLOW = "\u001B[33m";
+	private static final String ANSI_BLUE = "\u001B[34m";
+	private static final String ANSI_PURPLE = "\u001B[35m";
+	private static final String ANSI_CYAN = "\u001B[36m";
+	private static final String ANSI_WHITE = "\u001B[37m";
 
 
-	Connection conn;
-	Client client;
+	private Connection conn;
+	private Client client;
 
 	public SimpleClient(String server, int port, String passwd) throws InvalidKeyException {
 		//setup
@@ -99,7 +99,8 @@ public class SimpleClient implements StateChangeListener {
 			} else {
 				//take the argument as a server:port option:
 				String[] a = args[i].split(":", 2);
-				server = a[0];
+				if (!a[0].isEmpty())
+					server = a[0];
 				if(a.length>1)
 					port = Integer.valueOf(a[1]);
 			}
