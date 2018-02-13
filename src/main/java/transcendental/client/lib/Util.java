@@ -27,7 +27,7 @@ public class Util {
 			String mt = mime.split(";")[0];
 			mimetypes.add(mime);
 		}
-		String out = join(mimetypes, "\n");
+		String out = String.join("\n",mimetypes);
 		byte[] bytes = null;
 		try {
 			bytes = out.getBytes("UTF-8");
@@ -45,6 +45,9 @@ public class Util {
 		} catch(UnsupportedEncodingException e) {
 			ohMyGodUtf8IsNotSupportedWhatShouldIDo(e);
 		}
+		if(mimeTypesString.isEmpty())
+			return new DataFlavor[0];
+
 		String[] mimeTypes = mimeTypesString.split("\n");
 
 		List<DataFlavor> flavors = new Vector<>(mimeTypes.length);
@@ -55,6 +58,9 @@ public class Util {
 			} catch(ClassNotFoundException e) {
 				//MAYBE silent
 				e.printStackTrace();
+			} catch(IllegalArgumentException iae){
+				System.err.println("FAILING mime: "+mimeType + "|-" + mimeTypesString + "-");
+				iae.printStackTrace();
 			}
 		}
 
@@ -113,21 +119,6 @@ public class Util {
 		throw new Fit("UTF8 is not supported on this System, I can't live on.", e);
 	}
 
-
-	static String join(Iterable<String> strings, String glue) {
-		StringBuilder sb = new StringBuilder();
-		boolean first = true;
-		for(String string : strings) {
-			if(!first) {
-				sb.append(glue);
-			} else {
-				first = false;
-			}
-			sb.append(string);
-		}
-		return sb.toString();
-	}
-
 	private static byte[] toByteArray(InputStream is) throws IOException {
 		ByteArrayOutputStream os = new ByteArrayOutputStream();
 
@@ -164,14 +155,6 @@ class Fit extends Error {
  * Just a simple broadcast barrier, where a signal releases all waiters, waits for them to be started and resumes its work.
  */
 class SimpleBarrier {
-//	private ReadWriteLock rwl;
-
-	SimpleBarrier() {
-//		rwl = new ReentrantReadWriteLock(true);
-//		//Set the write-lock by default so all waiting processes will wait for it to be released.
-//		rwl.writeLock().lock();
-	}
-
 	/**
 	 * The current thread sleeps till the barrier receives a signal call.
 	 */
@@ -179,11 +162,7 @@ class SimpleBarrier {
 		try {
 			wait();
 		} catch (InterruptedException ignored) {
-
 		}
-		//Wait for the WriteLock to be released and then allow the write-lock to lock the state again.
-//		rwl.readLock().lock();
-//		rwl.readLock().unlock();
 	}
 
 	/**
@@ -191,9 +170,5 @@ class SimpleBarrier {
 	 */
 	synchronized void signal() {
 		notifyAll();
-		//allow all read-locks to be locked and then unlocked to release all waiting processes.
-//		rwl.writeLock().unlock();
-		//then begin accumulating all read-locks again.
-//		rwl.writeLock().lock();
 	}
 }
