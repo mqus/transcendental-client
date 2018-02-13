@@ -27,6 +27,7 @@ public class Client implements FlavorListener, Transferable, ClipboardOwner {
 	private byte[] data;
 	private Connection conn;
 	private Semaphore waitForRecv = new Semaphore(0);
+	private DataFlavor requestFlavor;
 
 	public Client(String room, Connection conn) throws InvalidKeyException {
 		this.conn = conn;
@@ -76,6 +77,15 @@ public class Client implements FlavorListener, Transferable, ClipboardOwner {
 		this.conn.disconnect();
 		if(waitForRecv.hasQueuedThreads())
 			waitForRecv.release();
+	}
+
+	/**
+	 * A simple function for StateChangeListeners to read the current requested flavor of the clipboard.
+	 * (only possible if the new State is DATA_REQUESTED or REQUEST_PENDING
+	 * @return the Flavor of the current Request
+	 */
+	public DataFlavor getCurrentRequestFlavor() {
+		return requestFlavor;
 	}
 
 	private void changeState(ClientState newState) {
@@ -128,12 +138,13 @@ public class Client implements FlavorListener, Transferable, ClipboardOwner {
 					} else {
 						if(s != ClientState.DATA_ON_THIS_CLIENT)
 							replyWithReject(pkg.getClientID(), true);
+						requestFlavor = Util.deserializeFlavor(pkg.getContent());
 						changeState(ClientState.DATA_REQUESTED);
 
-						DataFlavor requestFlavor = Util.deserializeFlavor(pkg.getContent());
 						if(requestFlavor != null && clipboard.isDataFlavorAvailable(requestFlavor)) {
 							try {
 								byte[] data = Util.serializeData(clipboard.getContents(this), requestFlavor);
+								requestFlavor=null;
 								conn.reliableSend(getPackager().packData(data, pkg.getClientID()), false);
 							} catch(IOException e) {
 								//If errors occured while trying to copy from the clipboard, reply with an empty reject.
@@ -146,6 +157,7 @@ public class Client implements FlavorListener, Transferable, ClipboardOwner {
 								e.printStackTrace();
 								replyWithReject(pkg.getClientID(), false);
 							}
+							requestFlavor=null;
 
 						} else {
 							replyWithReject(pkg.getClientID(), false);
@@ -273,11 +285,15 @@ public class Client implements FlavorListener, Transferable, ClipboardOwner {
 	 */
 	@Override
 	public Object getTransferData(DataFlavor flavor) throws UnsupportedFlavorException, IOException {
+		if(s==ClientState.INIT)
+			throw new IOException("Request Failed (reason: remote clipboard lost");
 		byte[] data = Util.serializeFlavor(flavor);
 		boolean success = conn.send(getPackager().packRequest(data, lastClipboardHolder));
 		if(!success)
 			throw new IOException("Request Failed (reason: send failed)");
+		requestFlavor=flavor;
 		changeState(ClientState.REQUEST_PENDING);
+		requestFlavor=null;
 		try {
 			waitForRecv.acquire();
 		} catch(InterruptedException e) {

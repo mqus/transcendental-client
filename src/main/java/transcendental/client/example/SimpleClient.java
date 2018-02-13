@@ -50,7 +50,10 @@ public class SimpleClient implements StateChangeListener {
 
 	@Override
 	public void handleClientStateChange(ClientState newState) {
-		System.out.println(ANSI_GREEN + "- clientstateChanged: " + newState + ANSI_RESET);
+		String additionals="";
+		if(newState == ClientState.REQUEST_PENDING || newState == ClientState.DATA_REQUESTED)
+			additionals = ", flavor: "+client.getCurrentRequestFlavor();
+		System.out.println(ANSI_GREEN + "- clientstateChanged: " + newState + additionals + ANSI_RESET);
 	}
 
 
@@ -73,7 +76,8 @@ public class SimpleClient implements StateChangeListener {
 							//take the argument as a server:port option:
 							String[] a = server.split(":", 2);
 							server = a[0];
-							port = Integer.valueOf(a[1]);
+							if(a.length>1)
+								port = Integer.valueOf(a[1]);
 						}
 						break;
 					case "-r":
@@ -96,7 +100,8 @@ public class SimpleClient implements StateChangeListener {
 				//take the argument as a server:port option:
 				String[] a = args[i].split(":", 2);
 				server = a[0];
-				port = Integer.valueOf(a[1]);
+				if(a.length>1)
+					port = Integer.valueOf(a[1]);
 			}
 
 		}
