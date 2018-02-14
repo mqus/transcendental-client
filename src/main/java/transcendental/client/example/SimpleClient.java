@@ -8,7 +8,7 @@ import java.security.InvalidKeyException;
  * Created by markus on 26.01.17.
  */
 public class SimpleClient implements StateChangeListener {
-	private static final String ver = "v0.6.0";
+	private static final String ver = "v0.6.2";
 
 	private static final String ANSI_RESET = "\u001B[0m";
 	private static final String ANSI_BLACK = "\u001B[30m";

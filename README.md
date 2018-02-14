@@ -5,7 +5,7 @@ The Client now mostly works but there may be quite some bugs which i have overlo
 
 To let the client run, a running server is necessary, the server is provided in [https://github.com/mqus/transcendental](https://github.com/mqus/transcendental)
 
-Current Version: 0.6.0
+Current Version: 0.6.2
 ## TODO
   - [ ] Tests
   - [ ] One-Transmission-Text-Transfer (TEXT)
@@ -14,23 +14,35 @@ Current Version: 0.6.0
   - [ ] A client for android
   
 ## Dependencies
-  - Java 1.7 (openjdk or Oracle Java)
+  - Java 1.8 (openjdk or Oracle Java)
 
 for building:
   - Gradle >=3.4 (older may also work, couldn't test it)
 
 
 ## Build instructions:
-To run the client you can either (1) run the client from source or (2) build a distribution package and run from that.
+To run the client you can either 
+(1) run the client from source or 
+(2) build a self-contained jar-file to run with java or
+(3) build a distribution package and run from that.
+
 ### (1) Run the Client from Source
 <pre>$ gradle run</pre>
 This will use the default options, but you can supply commandline Options with the following way:
 <pre>$ gradle run -PappArgs="['server:port', '--room', 'MySecretRoom']"</pre>
-### (2) Compile to the distribution binary
+
+### (2) Compile to .jar
+<pre>$ gradle assemble</pre>
+This will create two java archives in `build/libs`, `transcendental-client-x.x.x.jar` 
+and `transcendental-client-x.x.x-all.jar`. The former contains only the compiled source code, the latter also contains all dependencies.
+For running, simply execute:
+<pre>$ java -jar build/libs/transcendental-client-0.6.2-all.jar </pre>
+
+### (3) Compile to the distribution binary
 <pre>$ gradle distZip</pre>
 This will create a zip file in build/distributions, which you can unpack wherever you like. You then have to run bin/transcendental-client (or bin/transcendental-client.bat on Windows)
 <pre>
-/tmp/uyrcuyr/transcendental-client-0.6.0 $ bin/transcendental-client --help
+/tmp/uyrcuyr/transcendental-client-0.6.2 $ bin/transcendental-client --help
 Transcendental-SimpleClient v0.6.0
 	a simple deamon-like Client for sharing the local Clipboard with other Devices.
 Usage: transcendental-client [OPTIONS] [<server>:<port>]
