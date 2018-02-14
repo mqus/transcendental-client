@@ -130,19 +130,21 @@ public class Connection {
 		if(this.client == null) {
 			throw new Error("Didn't bind client to conn before attempting co open a connection.");
 		}
-		changeState(ConnState.CONNECTING);
-
 		try {
-			conn = new Socket(server, port);
-			conn.getOutputStream().write(this.client.getPackager().packHello());
-			r = new InputStreamReader(conn.getInputStream(), "UTF-8");
+			connect();
 		} catch(IOException e) {
 			exceptionOccured(e);
 			return false;
 		}
-
-		changeState(ConnState.CONNECTED);
 		return true;
+	}
+
+	private void connect() throws IOException {
+		changeState(ConnState.CONNECTING);
+		conn = new Socket(server, port);
+		conn.getOutputStream().write(this.client.getPackager().packHello());
+		r = new InputStreamReader(conn.getInputStream(), "UTF-8");
+		changeState(ConnState.CONNECTED);
 	}
 
 	public Exception tryConnect() {
@@ -174,12 +176,8 @@ public class Connection {
 
 			}
 
-			changeState(ConnState.CONNECTING);
-
 			try {
-				conn = new Socket(server, port);
-				conn.getOutputStream().write(this.client.getPackager().packHello());
-				changeState(ConnState.CONNECTED);
+				connect();
 			} catch(IOException e) {
 				exceptionOccured(e, true);
 				changeState(ConnState.FAILED);

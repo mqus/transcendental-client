@@ -113,14 +113,14 @@ public class Client implements FlavorListener, Transferable, ClipboardOwner {
 		while(true) {
 			Package pkg = conn.recv();
 			if(pkg == null) {
-				if(conn.getState() == ConnState.FAILED) {
-					conn.waitForConnection();
-					continue;
-				}
-				if(conn.getState() == ConnState.NO_CONNECTION)
+				if(conn.getState() == ConnState.NO_CONNECTION) {
 					//if disconnect is called from the outside, it will be called again here.
 					disconnect();
-				return;
+					return;
+				}
+				if(conn.getState() == ConnState.FAILED)
+					conn.waitForConnection();
+				continue;
 			}
 
 			switch(pkg.getType()) {
