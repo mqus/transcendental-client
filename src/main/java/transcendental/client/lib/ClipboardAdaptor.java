@@ -3,7 +3,6 @@ package transcendental.client.lib;
 import java.awt.*;
 import java.awt.datatransfer.*;
 import java.io.IOException;
-import java.security.InvalidKeyException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.concurrent.Semaphore;
@@ -11,7 +10,7 @@ import java.util.concurrent.Semaphore;
 /**
  * Created by markus on 26.01.17.
  */
-public class Client implements FlavorListener, Transferable, ClipboardOwner {
+public class ClipboardAdaptor implements FlavorListener, Transferable, ClipboardOwner {
 	//config
 
 	private StateChangeListener listener = new DefaultListener(true);
@@ -32,10 +31,10 @@ public class Client implements FlavorListener, Transferable, ClipboardOwner {
 	private DataFlavor requestFlavor;
 	private boolean eager_copy;
 
-	public Client(String room, Connection conn) throws InvalidKeyException {
+	public ClipboardAdaptor(Packager packager, Connection conn) {
 		this.conn = conn;
 		conn.bind(this);
-		this.packager = new Packager(room);
+		this.packager = packager;
 		this.clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
 		this.eager_copy = isClipboardEager();
 	}
@@ -50,7 +49,7 @@ public class Client implements FlavorListener, Transferable, ClipboardOwner {
 		return false;
 	}
 
-	public Client setStateChangeListener(StateChangeListener listener) {
+	public ClipboardAdaptor setStateChangeListener(StateChangeListener listener) {
 		if(listener == null)
 			this.listener = StateChangeListener.VERBOSE;
 		else
@@ -75,7 +74,7 @@ public class Client implements FlavorListener, Transferable, ClipboardOwner {
 
 	}
 
-	public Client setClipboard(Clipboard cb) {
+	public ClipboardAdaptor setClipboard(Clipboard cb) {
 		if (cb == null)
 			cb = Toolkit.getDefaultToolkit().getSystemClipboard();
 
@@ -134,7 +133,12 @@ public class Client implements FlavorListener, Transferable, ClipboardOwner {
 						if (eager_copy) {
 							isClipboardContentFromOtherClient = true;
 							changeState(ClientState.REQUEST_POSSIBLE);
-							new Thread(() -> clipboard.setContents(this, this)).start();
+							new Thread(new Runnable() {
+								@Override
+								public void run() {
+									clipboard.setContents(ClipboardAdaptor.this, ClipboardAdaptor.this);
+								}
+							}).start();
 						} else {
 							isClipboardContentFromOtherClient = true;
 							clipboard.setContents(this, this);
@@ -247,8 +251,7 @@ public class Client implements FlavorListener, Transferable, ClipboardOwner {
 			DataFlavor[] flavors = clipboard.getAvailableDataFlavors();
 			byte[] data = Util.serializeFlavors(flavors);
 
-			byte[] pkg = packager.packCopy(data);
-			conn.reliableSend(pkg, false);
+			conn.reliableSend(getPackager().packCopy(data), false);
 
 		}
 	}

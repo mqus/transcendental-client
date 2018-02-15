@@ -4,6 +4,7 @@ import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.Transferable;
 import java.awt.datatransfer.UnsupportedFlavorException;
 import java.io.*;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Vector;
@@ -27,7 +28,7 @@ public class Util {
 			String mt = mime.split(";")[0];
 			mimetypes.add(mime);
 		}
-		String out = String.join("\n",mimetypes);
+		String out = join("\n",mimetypes);
 		byte[] bytes = null;
 		try {
 			bytes = out.getBytes("UTF-8");
@@ -35,6 +36,18 @@ public class Util {
 			ohMyGodUtf8IsNotSupportedWhatShouldIDo(e);
 		}
 		return bytes;
+	}
+
+	private static String join(String glue, Collection<String> strings) {
+		StringBuilder sb = new StringBuilder();
+		boolean first=true;
+		for (String s : strings) {
+			if(!first)
+				sb.append(glue);
+			sb.append(s);
+			first=false;
+		}
+		return sb.toString();
 	}
 
 	public static DataFlavor[] deserializeFlavors(byte[] data) {

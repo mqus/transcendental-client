@@ -3,6 +3,8 @@ package transcendental.test;
 import java.awt.*;
 import java.awt.datatransfer.Clipboard;
 import java.awt.datatransfer.DataFlavor;
+import java.awt.datatransfer.FlavorEvent;
+import java.awt.datatransfer.FlavorListener;
 import java.security.InvalidKeyException;
 
 /**
@@ -52,23 +54,26 @@ public class Main {
 	public static void main4(String[] args) throws InterruptedException {
 		final Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
 		final DataFlavor[] flavors = clipboard.getAvailableDataFlavors();
-		clipboard.addFlavorListener(e -> {
+		clipboard.addFlavorListener(new FlavorListener() {
+			@Override
+			public void flavorsChanged(FlavorEvent e) {
 
-			for (DataFlavor flavor : clipboard.getAvailableDataFlavors()) {
+				for (DataFlavor flavor : clipboard.getAvailableDataFlavors()) {
 //					if(!flavor.isRepresentationClassInputStream())continue;
-				System.out.println("   ");
-				System.out.println(flavor);
-				System.out.println(flavor.getHumanPresentableName());
-				System.out.println(flavor.getMimeType());
-				System.out.print("\t" + (flavor.isMimeTypeSerializedObject() ? "y" : "n"));
-				System.out.print("\t" + (flavor.isFlavorSerializedObjectType() ? "y" : "n"));
-				System.out.print("\t" + (flavor.isRepresentationClassByteBuffer() ? "y" : "n"));
-				System.out.print("\t" + (flavor.isRepresentationClassInputStream() ? "y" : "n"));
-				System.out.print("\t" + (flavor.isRepresentationClassReader() ? "y" : "n"));
-				System.out.print("\t" + (flavor.isRepresentationClassRemote() ? "y" : "n"));
-				System.out.println("\t" + (flavor.isRepresentationClassSerializable() ? "y" : "n"));
+					System.out.println("   ");
+					System.out.println(flavor);
+					System.out.println(flavor.getHumanPresentableName());
+					System.out.println(flavor.getMimeType());
+					System.out.print("\t" + (flavor.isMimeTypeSerializedObject() ? "y" : "n"));
+					System.out.print("\t" + (flavor.isFlavorSerializedObjectType() ? "y" : "n"));
+					System.out.print("\t" + (flavor.isRepresentationClassByteBuffer() ? "y" : "n"));
+					System.out.print("\t" + (flavor.isRepresentationClassInputStream() ? "y" : "n"));
+					System.out.print("\t" + (flavor.isRepresentationClassReader() ? "y" : "n"));
+					System.out.print("\t" + (flavor.isRepresentationClassRemote() ? "y" : "n"));
+					System.out.println("\t" + (flavor.isRepresentationClassSerializable() ? "y" : "n"));
+				}
+				System.err.println("---");
 			}
-			System.err.println("---");
 		});
 
 		Thread.sleep(1000 * 3600);

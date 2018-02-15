@@ -8,8 +8,9 @@ import java.security.InvalidKeyException;
  * Created by markus on 26.01.17.
  */
 public class SimpleClient implements StateChangeListener {
-	private static final String ver = "v0.6.2";
+	private static final String ver = "v0.7.0";
 
+	// for coloring the output
 	private static final String ANSI_RESET = "\u001B[0m";
 	private static final String ANSI_BLACK = "\u001B[30m";
 	private static final String ANSI_RED = "\u001B[31m";
@@ -22,26 +23,27 @@ public class SimpleClient implements StateChangeListener {
 
 
 	private Connection conn;
-	private Client client;
+	private ClipboardAdaptor clipboardAdaptor;
 
 	public SimpleClient(String server, int port, String passwd) throws InvalidKeyException {
 		//setup
-		conn = new Connection(server, port);
+		conn = new ServerConnection(server, port);
 		conn.setStateChangeListener(this);
-		client = new Client(passwd, conn);
-		client.setStateChangeListener(this);
+		Packager pkger = new Packager(passwd);
+		clipboardAdaptor = new ClipboardAdaptor(pkger, conn);
+		clipboardAdaptor.setStateChangeListener(this);
 
 	}
 
 	public void go() {
-		client.connectAndRun();
+		clipboardAdaptor.connectAndRun();
 	}
 
 	@Override
 	public void handleConnStateChange(ConnState newState) {
 
 		System.out.println(ANSI_BLUE + "-connstateChanged: " + newState + ANSI_RESET);
-		if(newState == ConnState.EXCEPTION) {
+		if(newState == ConnState.EXCEPTION && !(conn.getLastException() instanceof ConnectionLostException)) {
 			System.out.print(ANSI_RED);
 			conn.getLastException().printStackTrace();
 			System.out.print(ANSI_RESET);
@@ -52,7 +54,7 @@ public class SimpleClient implements StateChangeListener {
 	public void handleClientStateChange(ClientState newState) {
 		String additionals="";
 		if(newState == ClientState.REQUEST_PENDING || newState == ClientState.DATA_REQUESTED)
-			additionals = ", flavor: "+client.getCurrentRequestFlavor();
+			additionals = ", flavor: "+ clipboardAdaptor.getCurrentRequestFlavor();
 		System.out.println(ANSI_GREEN + "- clientstateChanged: " + newState + additionals + ANSI_RESET);
 	}
 

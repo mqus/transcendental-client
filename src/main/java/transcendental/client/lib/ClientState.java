@@ -36,12 +36,12 @@ public enum ClientState {
 	DATA_RECEIVED,
 
 	/**
-	 * The client has become the owner of the common clipboard
+	 * The client has become the owner of the shared clipboard
 	 */
 	DATA_ON_THIS_CLIENT,
 
 	/**
-	 * The client was requested for its clipboard contents
+	 * This client was requested for its clipboard contents by another client
 	 */
 	DATA_REQUESTED,
 }

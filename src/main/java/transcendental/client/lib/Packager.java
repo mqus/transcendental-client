@@ -47,37 +47,37 @@ public class Packager {
 	}
 
 	public byte[] packHello() {
-		return pack(Package.Type.HELLO, "ROOM".getBytes());
+		return pack(Package.Type.HELLO, "ROOM".getBytes()).serialize();
 	}
 
-	public byte[] packCopy(byte[] flavors) {
+	public SerializablePackage packCopy(byte[] flavors) {
 		return pack(Package.Type.COPY, flavors);
 	}
 
-	public byte[] packText(byte[] text) {
+	public SerializablePackage packText(byte[] text) {
 		return pack(Package.Type.TEXT, text);
 	}
 
-	public byte[] packRequest(byte[] flavor, int to) {
+	public SerializablePackage packRequest(byte[] flavor, int to) {
 		return pack(Package.Type.REQUEST, to, flavor);
 	}
 
-	public byte[] packData(byte[] data, int to) {
+	public SerializablePackage packData(byte[] data, int to) {
 		return pack(Package.Type.DATA, to, data);
 	}
 
-	public byte[] packReject(byte[] availableFlavors, int to) {
+	public SerializablePackage packReject(byte[] availableFlavors, int to) {
 		return pack(Package.Type.REJECT, to, availableFlavors);
 	}
 
-	private byte[] pack(Package.Type type, byte[] content) {
+	private SerializablePackage pack(Package.Type type, byte[] content) {
 		SerializablePackage pkg = new SerializablePackage(type, content);
-		return serialize(pkg);
+		return pkg;
 	}
 
-	private byte[] pack(Package.Type type, int clientID, byte[] content) {
+	private SerializablePackage pack(Package.Type type, int clientID, byte[] content) {
 		SerializablePackage pkg = new SerializablePackage(type, clientID, content);
-		return serialize(pkg);
+		return pkg;
 	}
 
 	public Package deserialize(Reader input) throws JsonIOException, JsonSyntaxException {
@@ -92,7 +92,7 @@ public class Packager {
 		SerializablePackage pkg = new SerializablePackage(pkg_rootless);
 
 		try {
-			return new Package(pkg.getType(), pkg.getClientID(), pkg.getContent());
+			return new Package(pkg.getType(), pkg.getClientID(), pkg.getDecryptedContent());
 		} catch (BadPaddingException e) {
 			e.printStackTrace();
 			return Package.BAD_PACKAGE;
@@ -127,19 +127,7 @@ public class Packager {
 		return Base64.decodeBase64(encoded);
 	}
 
-	private static byte[] serialize(SerializablePackage pkg) {
-		String s = g.toJson(pkg);
-
-		try {
-			return s.getBytes("UTF-8");
-		} catch(UnsupportedEncodingException e) {
-			Util.ohMyGodUtf8IsNotSupportedWhatShouldIDo(e);
-			//is not reached because an Error is thrown
-			return new byte[0];
-		}
-	}
-
-	class SerializablePackage {
+	public class SerializablePackage {
 		@SerializedName("Type")
 		private Package.Type type;
 
@@ -174,8 +162,20 @@ public class Packager {
 			return clientID;
 		}
 
-		byte[] getContent() throws BadPaddingException {
+		byte[] getDecryptedContent() throws BadPaddingException {
 			return decrypt(decodeBytes(content));
+		}
+
+		byte[] serialize() {
+			String s = g.toJson(this);
+
+			try {
+				return s.getBytes("UTF-8");
+			} catch(UnsupportedEncodingException e) {
+				Util.ohMyGodUtf8IsNotSupportedWhatShouldIDo(e);
+				//is not reached because an Error is thrown
+				return new byte[0];
+			}
 		}
 
 	}
