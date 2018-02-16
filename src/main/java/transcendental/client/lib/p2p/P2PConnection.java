@@ -1,64 +1,25 @@
 package transcendental.client.lib.p2p;
 
-import transcendental.client.lib.*;
+import transcendental.client.lib.ClipboardAdaptor;
+import transcendental.client.lib.Connection;
 import transcendental.client.lib.Package;
+import transcendental.client.lib.Packager;
 
-public class P2PConnection implements Connection{
-	/**
-	 * Bind the connection to a Packager which provides (de-)serialisation functionalities.
-	 * <p>
-	 * Note: should only be called from within this library
-	 *
-	 * @param p the packager this connection should use
-	 */
-	@Override
-	public void bind(Packager p) {
+import java.io.IOException;
 
-	}
+public class P2PConnection extends Connection{
 
 	/**
-	 * Sets the callback interface, on which every state change of this connection is notified.
-	 * This Callback is blocking!
-	 *
-	 * @param listener The listening interface. this connection will only call the {@code handleConnStateChange} method.
-	 * @return {@code this} {@code Connection}, to chain calls.
-	 */
-	@Override
-	public Connection setStateChangeListener(StateChangeListener listener) {
-		return null;
-	}
-
-	/**
-	 * @return the last thrown {@code Exception}, which triggered an EXCEPTION state.
-	 */
-	@Override
-	public Exception getLastException() {
-		return null;
-	}
-
-	/**
-	 * Sends the data to the appropriate receiver; retries as long the send fails
-	 * <p>
-	 * Note: should only be called from within this library
-	 *
-	 * @param pkg        the serialized package (Packager.pack())
-	 * @param beStubborn if this parameter is true, the connection will try to send the packet,
-	 */
-	@Override
-	public void reliableSend(Packager.SerializablePackage pkg, boolean beStubborn) {
-
-	}
-
-	/**
-	 * Sends the data to the appropriate receiver.
+	 * Sends the data to the appropriate receiver(s).
 	 * <p>
 	 * Note: should only be called from within this library
 	 *
 	 * @param pkg the serialized package (Packager.pack())
-	 * @return {@code true} if the send was successful, false if the Connection was interrupted or a timeout was reached.
+	 * @return true if the send was successful, false if the Connection was interrupted or a timeout was reached.
 	 */
 	@Override
 	public boolean send(Packager.SerializablePackage pkg) {
+		//TODO
 		return false;
 	}
 
@@ -73,6 +34,7 @@ public class P2PConnection implements Connection{
 	 */
 	@Override
 	public Package recv() {
+		//TODO
 		return null;
 	}
 
@@ -82,10 +44,10 @@ public class P2PConnection implements Connection{
 	 * Note: should only be called from within this library
 	 *
 	 * @return {@code true}, if a connection was successfully opened.
-	 * @see ClipboardAdaptor#connectAndRun()
 	 */
 	@Override
 	public boolean open() {
+		//TODO
 		return false;
 	}
 
@@ -93,24 +55,28 @@ public class P2PConnection implements Connection{
 	 * Test the connection
 	 */
 	@Override
-	public void tryConnect() throws Exception {
+	public void tryConnect() throws IOException {
+		//TODO
 
 	}
 
 	/**
-	 * Disconnect from the other clients. After this, the connection could be opened again with open().
+	 * Disconnects from the other clients. After this, the connection could be opened again with open().
+	 * <p>
+	 * Note: should only be called from within this library
+	 *
+	 * @see ClipboardAdaptor#disconnect()
 	 */
 	@Override
 	public void disconnect() {
+		//TODO
 
 	}
 
-	/**
-	 * @return the current state of the Connection.
-	 */
 	@Override
-	public ConnState getState() {
-		return null;
+	protected void retryConnect() {
+		//TODO
+
 	}
 
 	/**
@@ -120,6 +86,7 @@ public class P2PConnection implements Connection{
 	 */
 	@Override
 	public void waitForConnection() {
+		//TODO
 
 	}
 }

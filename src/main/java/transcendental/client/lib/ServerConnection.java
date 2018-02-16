@@ -11,23 +11,17 @@ import java.net.Socket;
 /**
  * Created by markus on 29.01.17.
  */
-public class ServerConnection implements Connection {
+public class ServerConnection extends Connection {
 	private String server = "localhost";
 	private int port = 19192;
 	private int connectTimeout = 5;
-	private int maxRetryInterval = 30;
-	private StateChangeListener listener = StateChangeListener.SILENT;
 
 	private Socket conn;
-	private ConnState s = ConnState.NO_CONNECTION;
-	private Exception lastException = null;
-	private Packager packager = null;
 	private Reader r = null;
-	private SimpleBarrier broadcast;
 
 
 	public ServerConnection() {
-		broadcast = new SimpleBarrier();
+		super();
 	}
 
 	public ServerConnection(String server, int port) {
@@ -36,82 +30,24 @@ public class ServerConnection implements Connection {
 		this.port = port;
 	}
 
-	public Connection setServer(String server) {
+	public ServerConnection setServer(String server) {
 		this.server = server;
 		return this;
 	}
 
-	public Connection setPort(int port) {
+	public ServerConnection setPort(int port) {
 		this.port = port;
 		return this;
 	}
 
-	public Connection setConnectTimeout(int connectTimeout) {
+	public ServerConnection setConnectTimeout(int connectTimeout) {
 		this.connectTimeout = connectTimeout;
 		return this;
 	}
 
-	public Connection setMaxRetryInterval(int maxRetryInterval) {
-		this.maxRetryInterval = maxRetryInterval;
-		return this;
-	}
 
 	/**
-	 * Bind the connection to a Packager which provides (de-)serialisation functionalities.
-	 *
-	 * Note: should only be called from within this library
-	 *
-	 * @param p the packager this connection should use
-	 */
-	@Override
-	public void bind(Packager p) {
-		this.packager = p;
-	}
-
-	/**
-	 * Sets the callback interface, on which every state change of this connection is notified.
-	 * This Callback is blocking!
-	 *
-	 * @param listener The listening interface. this connection will only call the {@code handleConnStateChange} method.
-	 * @return {@code this} {@code Connection}, to chain calls.
-	 */
-	@Override
-	public Connection setStateChangeListener(StateChangeListener listener) {
-		if(listener == null)
-			this.listener = StateChangeListener.SILENT;
-		else
-			this.listener = listener;
-		return this;
-	}
-
-	/**
-	 * @return the last thrown {@code Exception}, which triggered an EXCEPTION state.
-	 */
-	@Override
-	public Exception getLastException() {
-		return this.lastException;
-	}
-
-	/**
-	 * sends the data to the server; retries as long the send fails
-	 *
-	 * Note: should only be called from within this library
-	 * @param pkg the serialized package (Packager.pack())
-	 * @param beStubborn if this parameter is true, the connection will try to send the packet,
-	 *                      even if the connection is completely shut down.
-	 */
-	@Override
-	public void reliableSend(Packager.SerializablePackage pkg, boolean beStubborn) {
-		//as long as send fails, try again!
-		while (!send(pkg))
-			//If there is no connection and currently no attempt to reconnect, abort the send anyway
-			if (!beStubborn && (s == ConnState.NO_CONNECTION || s == ConnState.DISCONNECTING))
-				return;
-	}
-
-
-	/**
-	 * sends the data to the server.
+	 * Sends the data to the server.
 	 *
 	 * Note: should only be called from within this library
 	 * @param pkg the serialized package (Packager.pack())
@@ -200,7 +136,8 @@ public class ServerConnection implements Connection {
 	}
 
 	/**
-	 * Disconnect from the other clients. After this, the connection could be opened again with open().
+	 * Disconnect from the server. After this, the connection could be opened again with open().
+	 *
 	 * Note: should only be called from within this library
 	 * @see ClipboardAdaptor#disconnect()
 	 */
@@ -216,7 +153,8 @@ public class ServerConnection implements Connection {
 		changeState(ConnState.NO_CONNECTION);
 	}
 
-	private void retryConnect() {
+	@Override
+	protected void retryConnect() {
 		int t = 1;
 		while(s != ConnState.CONNECTED && s != ConnState.NO_CONNECTION) {
 			try {
@@ -235,57 +173,8 @@ public class ServerConnection implements Connection {
 		}
 	}
 
-	private void exceptionOccured(Exception e) {
-		exceptionOccured(e, false);
-	}
-
-	private void exceptionOccured(Exception e, boolean onlyTriggerStateChange) {
-		if(s == ConnState.NO_CONNECTION || s == ConnState.DISCONNECTING) return;
-
-		this.lastException = e;
-		changeState(ConnState.EXCEPTION);
-
-		if(onlyTriggerStateChange) return;
-
-		if(this.maxRetryInterval <= 0) {
-			changeState(ConnState.NO_CONNECTION);
-		} else {
-			changeState(ConnState.FAILED);
-			new Thread(new Runnable() {
-				@Override
-				public void run() {
-					ServerConnection.this.retryConnect();
-				}
-			}).start();
-		}
-	}
-
-	private void changeState(ConnState newState) {
-		changeState(newState, false);
-	}
-
-	private void changeState(ConnState newState, boolean silent) {
-		if(this.s == newState)
-			return;
-
-		if(!silent)
-			listener.handleConnStateChange(newState);
-
-		if(newState == ConnState.CONNECTED)
-			broadcast.signal();
-		this.s = newState;
-	}
-
 	/**
-	 * @return the current state of the Connection.
-	 */
-	@Override
-	public ConnState getState() {
-		return s;
-	}
-
-	/**
-	 * wait till the connection state is CONNECTED, meaning a connection is established.
+	 * Waits until the connection state is CONNECTED, meaning a connection is established.
 	 *
 	 * Note: should only be called from within this library
 	 */
