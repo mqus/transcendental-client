@@ -21,7 +21,7 @@ public class ServerConnection implements Connection {
 	private Socket conn;
 	private ConnState s = ConnState.NO_CONNECTION;
 	private Exception lastException = null;
-	private ClipboardAdaptor clipboardAdaptor = null;
+	private Packager packager = null;
 	private Reader r = null;
 	private SimpleBarrier broadcast;
 
@@ -56,11 +56,25 @@ public class ServerConnection implements Connection {
 		return this;
 	}
 
+	/**
+	 * Bind the connection to a Packager which provides (de-)serialisation functionalities.
+	 *
+	 * Note: should only be called from within this library
+	 *
+	 * @param p the packager this connection should use
+	 */
 	@Override
-	public void bind(ClipboardAdaptor cl) {
-		this.clipboardAdaptor = cl;
+	public void bind(Packager p) {
+		this.packager = p;
 	}
 
+	/**
+	 * Sets the callback interface, on which every state change of this connection is notified.
+	 * This Callback is blocking!
+	 *
+	 * @param listener The listening interface. this connection will only call the {@code handleConnStateChange} method.
+	 * @return {@code this} {@code Connection}, to chain calls.
+	 */
 	@Override
 	public Connection setStateChangeListener(StateChangeListener listener) {
 		if(listener == null)
@@ -70,6 +84,9 @@ public class ServerConnection implements Connection {
 		return this;
 	}
 
+	/**
+	 * @return the last thrown {@code Exception}, which triggered an EXCEPTION state.
+	 */
 	@Override
 	public Exception getLastException() {
 		return this.lastException;
@@ -78,6 +95,7 @@ public class ServerConnection implements Connection {
 	/**
 	 * sends the data to the server; retries as long the send fails
 	 *
+	 * Note: should only be called from within this library
 	 * @param pkg the serialized package (Packager.pack())
 	 * @param beStubborn if this parameter is true, the connection will try to send the packet,
 	 *                      even if the connection is completely shut down.
@@ -87,7 +105,7 @@ public class ServerConnection implements Connection {
 		//as long as send fails, try again!
 		while (!send(pkg))
 			//If there is no connection and currently no attempt to reconnect, abort the send anyway
-			if (!beStubborn && s == ConnState.NO_CONNECTION)
+			if (!beStubborn && (s == ConnState.NO_CONNECTION || s == ConnState.DISCONNECTING))
 				return;
 	}
 
@@ -95,6 +113,7 @@ public class ServerConnection implements Connection {
 	/**
 	 * sends the data to the server.
 	 *
+	 * Note: should only be called from within this library
 	 * @param pkg the serialized package (Packager.pack())
 	 * @return true if the send was successful, false if the Connection was interrupted or a timeout was reached.
 	 */
@@ -115,6 +134,7 @@ public class ServerConnection implements Connection {
 	/**
 	 * Waits for an incoming package, deserializes it and returns it.
 	 *
+	 * Note: should only be called from within this library
 	 * @return the received Package <b>or</b><br>
 	 * {@code null} , if the connection was interrupted or not there.<br>
 	 * {@code Package.BAD_PACKAGE}, if the package could not be decoded correctly.
@@ -125,7 +145,7 @@ public class ServerConnection implements Connection {
 			return null;
 
 		try {
-			Package pkg = this.clipboardAdaptor.getPackager().deserialize(r);
+			Package pkg = packager.deserialize(r);
 			if (pkg == null) {
 				//connection was lost, handle it:
 				exceptionOccured(new ConnectionLostException());
@@ -139,10 +159,16 @@ public class ServerConnection implements Connection {
 		}
 	}
 
+	/**
+	 * Connects to the server.
+	 *
+	 * Note: should only be called from within this library
+	 * @return {@code true}, if a connection was successfully opened.
+	 */
 	@Override
 	public boolean open() {
-		if(this.clipboardAdaptor == null) {
-			throw new Error("Didn't bind client to conn before attempting co open a connection.");
+		if(this.packager == null) {
+			throw new Error("Didn't bind conn to a packager before attempting co open a connection.");
 		}
 		try {
 			connect();
@@ -156,31 +182,38 @@ public class ServerConnection implements Connection {
 	private void connect() throws IOException {
 		changeState(ConnState.CONNECTING);
 		conn = new Socket(server, port);
-		conn.getOutputStream().write(this.clipboardAdaptor.getPackager().packHello());
+		conn.getOutputStream().write(packager.packHello());
 		r = new InputStreamReader(conn.getInputStream(), "UTF-8");
 		changeState(ConnState.CONNECTED);
 	}
 
+	/**
+	 * Test the connection
+	 *
+	 */
 	@Override
-	public Exception tryConnect() {
-		try {
-			Socket c = new Socket(server, port);
-			c.getOutputStream().write(this.clipboardAdaptor.getPackager().packHello());
-		} catch(IOException e) {
-			return e;
-		}
-		return null;
+	public void tryConnect() throws IOException{
+
+		Socket c = new Socket(server, port);
+		c.getOutputStream().write(packager.packHello());
+		c.close();
 	}
 
+	/**
+	 * Disconnect from the other clients. After this, the connection could be opened again with open().
+	 * Note: should only be called from within this library
+	 * @see ClipboardAdaptor#disconnect()
+	 */
 	@Override
 	public void disconnect() {
-		changeState(ConnState.NO_CONNECTION);
+		changeState(ConnState.DISCONNECTING);
 		try {
 			if(!conn.isClosed())
 				conn.close();
 		} catch(IOException e) {
 			e.printStackTrace();
 		}
+		changeState(ConnState.NO_CONNECTION);
 	}
 
 	private void retryConnect() {
@@ -207,7 +240,7 @@ public class ServerConnection implements Connection {
 	}
 
 	private void exceptionOccured(Exception e, boolean onlyTriggerStateChange) {
-		if(s == ConnState.NO_CONNECTION) return;
+		if(s == ConnState.NO_CONNECTION || s == ConnState.DISCONNECTING) return;
 
 		this.lastException = e;
 		changeState(ConnState.EXCEPTION);
@@ -243,11 +276,19 @@ public class ServerConnection implements Connection {
 		this.s = newState;
 	}
 
+	/**
+	 * @return the current state of the Connection.
+	 */
 	@Override
 	public ConnState getState() {
 		return s;
 	}
 
+	/**
+	 * wait till the connection state is CONNECTED, meaning a connection is established.
+	 *
+	 * Note: should only be called from within this library
+	 */
 	@Override
 	public void waitForConnection() {
 		broadcast.waitForSignal();

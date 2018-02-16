@@ -33,8 +33,8 @@ public class ClipboardAdaptor implements FlavorListener, Transferable, Clipboard
 
 	public ClipboardAdaptor(Packager packager, Connection conn) {
 		this.conn = conn;
-		conn.bind(this);
 		this.packager = packager;
+		conn.bind(this.packager);
 		this.clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
 		this.eager_copy = isClipboardEager();
 	}
@@ -64,6 +64,7 @@ public class ClipboardAdaptor implements FlavorListener, Transferable, Clipboard
 
 	/**
 	 * starts the (inifinite) Client Loop, which occasionally calls StateChangedListener to notify the Program running the client.
+	 * This method should by spawned in a new thread to run the adaptor in the background.
 	 */
 	public void connectAndRun() {
 		boolean ok = conn.open();
@@ -112,7 +113,7 @@ public class ClipboardAdaptor implements FlavorListener, Transferable, Clipboard
 		while(true) {
 			Package pkg = conn.recv();
 			if(pkg == null) {
-				if(conn.getState() == ConnState.NO_CONNECTION) {
+				if(conn.getState() == ConnState.DISCONNECTING || conn.getState() == ConnState.NO_CONNECTION) {
 					//if disconnect is called from the outside, it will be called again here.
 					disconnect();
 					return;
@@ -332,7 +333,7 @@ public class ClipboardAdaptor implements FlavorListener, Transferable, Clipboard
 		} else if(s == ClientState.REQUEST_REJECTED) {
 			changeState(ClientState.REQUEST_POSSIBLE);
 			throw new UnsupportedFlavorException(flavor);
-		} else if(conn.getState() == ConnState.NO_CONNECTION) {
+		} else if(conn.getState() == ConnState.NO_CONNECTION || conn.getState() == ConnState.DISCONNECTING) {
 			throw new IOException("Request Failed (reason: disconnect)");
 		} else {
 			ClientState cs = s;

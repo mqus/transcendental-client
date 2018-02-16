@@ -35,4 +35,9 @@ public enum ConnState {
 	 */
 	EXCEPTION,
 
+	/**
+	 * The connection is currently being closed.
+	 */
+	DISCONNECTING,
+
 }
