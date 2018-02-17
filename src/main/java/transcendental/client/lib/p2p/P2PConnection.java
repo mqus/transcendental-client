@@ -6,8 +6,20 @@ import transcendental.client.lib.Package;
 import transcendental.client.lib.Packager;
 
 import java.io.IOException;
+import java.net.InetSocketAddress;
+import java.net.Socket;
+import java.net.SocketAddress;
 
 public class P2PConnection extends Connection{
+	public static final int DEFAULT_PORT=19192;
+
+	private Bootstrapper b;
+
+
+	public P2PConnection(Bootstrapper bs, String host) throws Exception {
+		SocketAddress sa=Bootstrapper.toSocketAddress(host);
+		b=bs;
+	}
 
 	/**
 	 * Sends the data to the appropriate receiver(s).
@@ -47,7 +59,12 @@ public class P2PConnection extends Connection{
 	 */
 	@Override
 	public boolean open() {
-		//TODO
+		//1.: send join request, collect joinresponses from the same connections
+		//1.5 also collect ips from own connection, to assign local components of vectorclock
+		//2.: wait till time/no connection open/sufficient responses
+
+		//3.: addPeer() (connect to peer and send ping) (add peers with same clipboard and ones with a different one)
+
 		return false;
 	}
 
