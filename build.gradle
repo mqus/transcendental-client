@@ -33,3 +33,16 @@ run {
         args Eval.me(appArgs)
     }
 }
+
+install{
+    repositories {
+        mavenInstaller {
+            addFilter('normal') {artifact, file ->
+                artifact.ext == "jar" && !artifact.name.contains("-all")
+            }
+//            addFilter('shaded') {artifact, file ->
+//                artifact.ext == "jar" && artifact.name.contains("-all")
+//            }
+        }
+    }
+}
