@@ -5,7 +5,7 @@ The Client now mostly works but there may be quite some bugs which i have overlo
 
 To let the client run, a running server is necessary, the server is provided in [https://github.com/mqus/transcendental](https://github.com/mqus/transcendental)
 
-Current Version: 0.6.2
+Current Version: 0.7.1
 ## TODO
   - [ ] Tests
   - [ ] One-Transmission-Text-Transfer (TEXT)
@@ -14,7 +14,7 @@ Current Version: 0.6.2
   - [ ] A client for android
   
 ## Dependencies
-  - Java 1.8 (openjdk or Oracle Java)
+  - Java 1.7 (openjdk or Oracle Java)
 
 for building:
   - Gradle >=3.4 (older may also work, couldn't test it)
