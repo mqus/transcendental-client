@@ -139,13 +139,13 @@ public class ServerConnection extends Connection {
 	 * Disconnect from the server. After this, the connection could be opened again with open().
 	 *
 	 * Note: should only be called from within this library
-	 * @see ClipboardAdaptor#disconnect()
+	 * @see AWTAdaptor#disconnect()
 	 */
 	@Override
 	public void disconnect() {
 		changeState(ConnState.DISCONNECTING);
 		try {
-			if(!conn.isClosed())
+			if (conn != null && !conn.isClosed())
 				conn.close();
 		} catch(IOException e) {
 			e.printStackTrace();

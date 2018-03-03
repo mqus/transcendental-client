@@ -14,7 +14,7 @@ public interface StateChangeListener {
 	 *
 	 * @param newState the State the Connection changes to.
 	 */
-	void handleConnStateChange(ConnState newState);
+	void handleConnStateChange(Connection conn, ConnState newState);
 
 	/**
 	 * handleClientStateChange is called directly after the Client State changes.
@@ -34,7 +34,7 @@ class DefaultListener implements StateChangeListener {
 	}
 
 	@Override
-	public void handleConnStateChange(ConnState newState) {
+	public void handleConnStateChange(Connection ignored, ConnState newState) {
 		if(verbose) System.out.println("New Connection State: " + newState);
 		//Do nothing else
 	}
