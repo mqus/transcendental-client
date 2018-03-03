@@ -1,6 +1,6 @@
 package transcendental.client.lib.p2p;
 
-import transcendental.client.lib.ClipboardAdaptor;
+import transcendental.client.lib.AWTAdaptor;
 import transcendental.client.lib.Connection;
 import transcendental.client.lib.Package;
 import transcendental.client.lib.Packager;
@@ -65,7 +65,7 @@ public class P2PConnection extends Connection{
 	 * <p>
 	 * Note: should only be called from within this library
 	 *
-	 * @see ClipboardAdaptor#disconnect()
+	 * @see AWTAdaptor#disconnect()
 	 */
 	@Override
 	public void disconnect() {

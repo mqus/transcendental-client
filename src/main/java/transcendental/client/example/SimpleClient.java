@@ -8,7 +8,7 @@ import java.security.InvalidKeyException;
  * Created by markus on 26.01.17.
  */
 public class SimpleClient implements StateChangeListener {
-	private static final String ver = "v0.7.1";
+	private static final String ver = "v0.8.0";
 
 	// for coloring the output
 	private static final String ANSI_RESET = "\u001B[0m";
@@ -22,15 +22,14 @@ public class SimpleClient implements StateChangeListener {
 	private static final String ANSI_WHITE = "\u001B[37m";
 
 
-	private Connection conn;
-	private ClipboardAdaptor clipboardAdaptor;
+	private AWTAdaptor clipboardAdaptor;
 
 	public SimpleClient(String server, int port, String passwd) throws InvalidKeyException {
 		//setup
-		conn = new ServerConnection(server, port);
+		Connection conn = new ServerConnection(server, port);
 		conn.setStateChangeListener(this);
 		Packager pkger = new Packager(passwd);
-		clipboardAdaptor = new ClipboardAdaptor(pkger, conn);
+		clipboardAdaptor = new AWTAdaptor(pkger, conn);
 		clipboardAdaptor.setStateChangeListener(this);
 
 	}
@@ -40,7 +39,7 @@ public class SimpleClient implements StateChangeListener {
 	}
 
 	@Override
-	public void handleConnStateChange(ConnState newState) {
+	public void handleConnStateChange(Connection conn, ConnState newState) {
 
 		System.out.println(ANSI_BLUE + "-connstateChanged: " + newState + ANSI_RESET);
 		if(newState == ConnState.EXCEPTION && !(conn.getLastException() instanceof ConnectionLostException)) {

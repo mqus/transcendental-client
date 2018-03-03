@@ -111,7 +111,7 @@ public abstract class Connection {
 	 * Disconnects from the other clients. After this, the connection could be opened again with open().
 	 *
 	 * Note: should only be called from within this library
-	 * @see ClipboardAdaptor#disconnect()
+	 * @see AWTAdaptor#disconnect()
 	 */
 	public abstract void disconnect();
 
@@ -151,7 +151,7 @@ public abstract class Connection {
 			return;
 
 		if(!silent)
-			listener.handleConnStateChange(newState);
+			listener.handleConnStateChange(this, newState);
 
 		if(newState == ConnState.CONNECTED)
 			broadcast.signal();

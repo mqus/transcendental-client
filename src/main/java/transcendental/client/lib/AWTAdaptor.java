@@ -10,7 +10,7 @@ import java.util.concurrent.Semaphore;
 /**
  * Created by markus on 26.01.17.
  */
-public class ClipboardAdaptor implements FlavorListener, Transferable, ClipboardOwner {
+public class AWTAdaptor implements FlavorListener, Transferable, ClipboardOwner {
 	//config
 
 	private StateChangeListener listener = new DefaultListener(true);
@@ -31,7 +31,7 @@ public class ClipboardAdaptor implements FlavorListener, Transferable, Clipboard
 	private DataFlavor requestFlavor;
 	private boolean eager_copy;
 
-	public ClipboardAdaptor(Packager packager, Connection conn) {
+	public AWTAdaptor(Packager packager, Connection conn) {
 		this.conn = conn;
 		this.packager = packager;
 		conn.bind(this.packager);
@@ -49,7 +49,7 @@ public class ClipboardAdaptor implements FlavorListener, Transferable, Clipboard
 		return false;
 	}
 
-	public ClipboardAdaptor setStateChangeListener(StateChangeListener listener) {
+	public AWTAdaptor setStateChangeListener(StateChangeListener listener) {
 		if(listener == null)
 			this.listener = StateChangeListener.VERBOSE;
 		else
@@ -75,7 +75,7 @@ public class ClipboardAdaptor implements FlavorListener, Transferable, Clipboard
 
 	}
 
-	public ClipboardAdaptor setClipboard(Clipboard cb) {
+	public AWTAdaptor setClipboard(Clipboard cb) {
 		if (cb == null)
 			cb = Toolkit.getDefaultToolkit().getSystemClipboard();
 
@@ -137,7 +137,7 @@ public class ClipboardAdaptor implements FlavorListener, Transferable, Clipboard
 							new Thread(new Runnable() {
 								@Override
 								public void run() {
-									clipboard.setContents(ClipboardAdaptor.this, ClipboardAdaptor.this);
+									clipboard.setContents(AWTAdaptor.this, AWTAdaptor.this);
 								}
 							}).start();
 						} else {

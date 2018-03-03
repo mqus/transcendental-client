@@ -5,7 +5,7 @@ The Client now mostly works but there may be quite some bugs which i have overlo
 
 To let the client run, a running server is necessary, the server is provided in [https://github.com/mqus/transcendental](https://github.com/mqus/transcendental)
 
-Current Version: 0.7.1
+Current Version: 0.8.0
 ## TODO
   - [ ] Tests
   - [ ] One-Transmission-Text-Transfer (TEXT)
