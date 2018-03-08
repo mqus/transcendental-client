@@ -5,13 +5,15 @@ import com.google.gson.JsonIOException;
 import com.google.gson.JsonSyntaxException;
 import com.google.gson.annotations.SerializedName;
 import com.google.gson.stream.JsonReader;
-import org.apache.commons.codec.binary.Base64;
+import net.iharder.Base64;
+//import org.apache.commons.codec.binary.Base64;
 
 import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
 import javax.crypto.spec.SecretKeySpec;
+import java.io.IOException;
 import java.io.Reader;
 import java.io.UnsupportedEncodingException;
 import java.security.InvalidKeyException;
@@ -120,11 +122,18 @@ public class Packager {
 	}
 
 	private static String encodeBytes(byte[] bytes) {
-		return Base64.encodeBase64String(bytes);
+		return Base64.encodeBytes(bytes);
+		//return Base64.encodeBase64String(bytes);
 	}
 
 	private static byte[] decodeBytes(String encoded) {
-		return Base64.decodeBase64(encoded);
+		try {
+			return Base64.decode(encoded);
+		} catch(IOException e) {
+			throw new Error("Error when decoding '" + encoded + "'",e);
+			//e.printStackTrace();
+		}
+		//return Base64.decodeBase64(encoded);
 	}
 
 	public class SerializablePackage {
