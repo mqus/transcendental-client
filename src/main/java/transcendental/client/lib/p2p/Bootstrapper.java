@@ -32,7 +32,7 @@ public class Bootstrapper {
 		this.addBootstrapPeer(toSocketAddress(peer));
 	}
 
-	private void addBootstrapPeer(SocketAddress socketAddress) {
+	protected void addBootstrapPeer(SocketAddress socketAddress) {
 		this.bootstrapPeers.add(socketAddress);
 	}
 
