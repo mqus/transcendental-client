@@ -58,7 +58,6 @@ public class SimpleClient implements StateChangeListener {
 		System.out.println(ANSI_GREEN + "- clientstateChanged: " + newState + additionals + ANSI_RESET);
 	}
 
-
 	public static void main(String[] args) throws InvalidKeyException {
 		//defaults:
 		String server = "localhost", passwd = "RaumRaumRaumRaum";

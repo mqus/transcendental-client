@@ -2,16 +2,19 @@ package transcendental.test;
 
 import org.fourthline.cling.UpnpService;
 import org.fourthline.cling.UpnpServiceImpl;
+import org.fourthline.cling.model.ValidationException;
 import org.fourthline.cling.model.message.header.STAllHeader;
 import org.fourthline.cling.model.meta.*;
 import org.fourthline.cling.registry.Registry;
 import org.fourthline.cling.registry.RegistryListener;
+import transcendental.client.lib.p2p.SSDPDiscoveryService;
 
 import java.awt.*;
 import java.awt.datatransfer.Clipboard;
 import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.FlavorEvent;
 import java.awt.datatransfer.FlavorListener;
+import java.net.InetSocketAddress;
 import java.security.InvalidKeyException;
 import java.util.Arrays;
 
@@ -34,8 +37,17 @@ public class Main {
 
 	}
 
+	public static void main(String[] args) throws ValidationException {
+		SSDPDiscoveryService sds=new SSDPDiscoveryService();
+		sds.startAdvertising(new InetSocketAddress(7896));
+		try {
+			Thread.sleep(500);
+		} catch (InterruptedException ignored) { }
+		sds.search();
 
-	public static void main(String[] args) throws Exception{
+	}
+
+	public static void mai2n(String[] args) throws Exception{
 
 		// UPnP discovery is asynchronous, we need a callback
 		RegistryListener listener = new RegistryListener() {
