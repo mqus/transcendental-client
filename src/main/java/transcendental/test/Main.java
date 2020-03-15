@@ -37,7 +37,7 @@ public class Main {
 
 	}
 
-	public static void main(String[] args) throws ValidationException {
+	public static void manin(String[] args) throws ValidationException {
 		SSDPDiscoveryService sds=new SSDPDiscoveryService();
 		sds.startAdvertising(new InetSocketAddress(7896));
 		try {
@@ -47,7 +47,7 @@ public class Main {
 
 	}
 
-	public static void mai2n(String[] args) throws Exception{
+	public static void main(String[] args) throws Exception{
 
 		// UPnP discovery is asynchronous, we need a callback
 		RegistryListener listener = new RegistryListener() {
@@ -120,14 +120,16 @@ public class Main {
 
 		// Let's wait 10 seconds for them to respond
 		System.out.println("Waiting 10 seconds before shutting down...");
-		Thread.sleep(3000);
+		Thread.sleep(10000);
 
 		// Release all resources and advertise BYEBYE to other UPnP devices
 		System.out.println("Stopping Cling...");
-		for (Device d : upnpService.getRegistry().getDevices()) {
+		for (RemoteDevice d : upnpService.getRegistry().getRemoteDevices()) {
 			System.out.println(tos(d.getDetails()));
 			System.out.print("  ");
 			System.out.println(d.getType().getDisplayString());
+			System.out.print("  x");
+			System.out.println(d.isFullyHydrated());
 			System.out.print("  ");
 			System.out.print(tos(d.findServices()));
 
@@ -151,6 +153,14 @@ public class Main {
 		StringBuilder sb = new StringBuilder();
 
 		for(Service serv:s){
+			if(serv instanceof RemoteService){
+				sb.append(" ")
+						.append(((RemoteService) serv));
+				sb.append(" ")
+						.append(((RemoteService) serv).getDescriptorURI());
+				sb.append(" ")
+						.append(((RemoteService) serv).);
+			}
 			sb.append(" ")
 					.append(Arrays.toString(serv.getActions()))
 					.append(" # ")

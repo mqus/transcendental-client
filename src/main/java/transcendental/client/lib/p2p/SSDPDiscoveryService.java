@@ -35,6 +35,7 @@ public class SSDPDiscoveryService {
 		// Release all resources and advertise BYEBYE to other UPnP devices
 		ServiceId serviceId = new UDAServiceId("transcendental");
 		Service transcendentalService;
+		upnpService.getRegistry().setDiscoveryOptions();
 		for (Device d : upnpService.getRegistry().getDevices()) {
 			if ((transcendentalService = d.findService(serviceId)) != null) {
 
@@ -46,9 +47,10 @@ public class SSDPDiscoveryService {
 
 							@Override
 							public void success(ActionInvocation invocation) {
+
 								assert invocation.getOutput().length == 1;
 								ActionArgumentValue remotePort = invocation.getOutput("ListenerPort");
-								System.out.println("--Successfully called action!"+ (int)remotePort.getValue());
+								System.out.println("--Successfully called action:!"+ (int)remotePort.getValue());
 							}
 
 							@Override
